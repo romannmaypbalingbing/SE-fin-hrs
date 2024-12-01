@@ -5,14 +5,14 @@ import './App.css'
 
 const App: React.FC = () => {
   return (
-    <Router>
+    // <Router>
       <div>
-        <Routes>
-          <Route path="/" element={<SignUp />} />
+{/*         <Routes> */}
+{/*           <Route path="/" element={<SignUp />} /> */}
           <SignUp />
-        </Routes>
+{/*         </Routes> */}
     </div>
-    </Router>
+{/*     </Router> */}
   )
 }
 
