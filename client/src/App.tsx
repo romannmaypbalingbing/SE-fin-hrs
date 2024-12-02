@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import SignUp from './employee/authentication/SignUp'
-import './App.css'
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+
+import SignUp from './employee/authentication/SignUp';
+import SignIn from './employee/authentication/SignIn';
+import ReservationInfo from './guest/ReservationInfo';
+
+import './App.css';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <div>
-        <Routes>
-          <Route path="/" element={<SignUp />} />
-          <SignUp />
-        </Routes>
-    </div>
-    </Router>
-  )
-}
+          <Routes>
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/" element={<ReservationInfo />} />
 
-export default App 
+            
+          </Routes>
+  );
+};
+
+export default App;

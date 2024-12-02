@@ -1,20 +1,84 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import marisonfront from '../../assets/marisonfront.png';
 import marisonlogo from '../../assets/MARISON-LOGO.png';
+// import supabase from '../../supabaseClient';
 
 const SignUp: React.FC = () => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+
+  const navigate = useNavigate();
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if(password !== confirmPassword) {
+      alert('Password does not match. Please re-enter password.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8000/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+  
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Signup failed');
+      }
+  
+      const data = await response.json();
+      console.log(data.message);
+      alert('Signup successful!');
+      navigate('/signin'); // Navigate to login page on success
+    } catch (error: any) {
+      console.error('Error during signup:', error.message);
+      alert('Signup failed: ' + error.message);
+    }
+  };
+
   return (
     <div className="bg-slate-100 flex justify-center items-center h-screen">
       {/* center layout */}
       <div className="flex flex-col lg:flex-row bg-white rounded-lg shadow-xl overflow-hidden w-full max-w-4xl">
         {/* left side images */}
-        <div className="hidden lg:block lg:w-1/2 bg-cover">
+        <div className="hidden lg:block lg:w-1/2 bg-cover group relative"> 
           <img 
             src={marisonfront} 
             alt="Marison-Front_Image" 
             className="h-full" 
           />
+          <div className="absolute inset-0 bg-red-950 opacity-0 group-hover:opacity-70 transition-opacity duration-300 flex flex-col items-center justify-center px-6">
+            {/* Buttons for redirecting to login */}
+            <h1 className="text-white text-xl font-sans italic font-medium mb-2">
+              Already have an account?
+            </h1>
+            <a href="/signin" className="bg-red-800 hover:bg-red-900 text-white font-normal py-2 px-4 rounded w-full mt-6">
+              Sign in
+            </a>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="border-b w-1/5 lg:w-1/4"></span>
+                <p className="text-xs text-center text-gray-300 uppercase">
+                  or
+                </p>
+              <span className="border-b w-1/5 lg:w-1/4"></span>
+            </div>
+            <a href="/" className="bg-red-800 hover:bg-red-900 text-white font-normal py-2 px-4 rounded w-full mt-6">
+              Continue as Guest
+            </a>
+            {/* Add more buttons or content as needed */}
+          </div>
         </div>
+
           {/* right side forms */}
         <div className="w-full p-8 lg:w-1/2">
           <div className="items-center">
@@ -27,7 +91,7 @@ const SignUp: React.FC = () => {
           {/* google sign up button */}
           <a
             href="#"
-            className="flex items-center justify-center mt-2 text-white rounded-lg shadow-md hover:bg-gray-100"
+            className="flex items-center justify-center mt-4 text-white rounded-lg shadow-md hover:bg-gray-100"
           >
             <div className="px-4 py-3">
               <svg className="h-6 w-6" viewBox="0 0 40 40">
@@ -62,33 +126,7 @@ const SignUp: React.FC = () => {
             <span className="border-b w-1/5 lg:w-1/4"></span>
           </div>
 
-          {/* input fields */}
-          <div className="grid grid-cols-2 gap-4 mt-3">
-            <div> 
-              <label className="block text-slate-500 text-sm font-medium mb-2 text-left">
-                First Name 
-              </label>
-              <div className="relative mt-2">
-                <input
-                  className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 px-4 block w-full appearance-none"
-                  type="text"  
-                />
-              </div>
-            </div>
-
-            <div> 
-              <label className="block text-slate-500 text-sm font-medium mb-2 text-left">
-                Last Name
-              </label>
-              <div className="relative mt-2"> 
-                <input
-                  className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 block w-full appearance-none"
-                  type="text" 
-                />
-              </div>
-            </div>
-          </div>
-
+          {/* email */}
           <div className="mt-2">
             <label className="block text-slate-500 text-sm font-medium mb-2 text-left">
               Email Address
@@ -96,6 +134,8 @@ const SignUp: React.FC = () => {
             <input
               className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 block w-full appearance-none"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           
@@ -108,6 +148,8 @@ const SignUp: React.FC = () => {
             <input
               className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 block w-full appearance-none"
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
@@ -120,19 +162,26 @@ const SignUp: React.FC = () => {
             <input
               className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 block w-full appearance-none"
               type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
 
           {/* button */}
           <div className="mt-8">
-            <button className="bg-red-800 text-white font-bold py-2 w-full rounded-sm hover:bg-red-900">
+            <button 
+              type="submit"
+              onClick={handleSignUp}
+              className="bg-red-800 text-white font-bold py-2 w-full rounded-sm hover:bg-red-900"
+            >
               Sign Up
             </button>
           </div>
+
           <div className="mt-4 flex items-center justify-between">
             <span className="border-b w-1/5 md:w-1/4"></span>
-            <a href="#" className="text-xs text-gray-500 uppercase hover:text-amber-700">
-              or log in
+            <a href="/login" className="text-xs text-gray-500 uppercase hover:text-amber-700">
+              or sign in
             </a>
             <span className="border-b w-1/5 md:w-1/4"></span>
           </div>
