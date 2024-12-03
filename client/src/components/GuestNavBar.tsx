@@ -29,9 +29,9 @@ const GuestNavBar = () => {
               href="javascript:void(0)"
             >
               <img
-                src="/marison-square-logo-white.png"
+                src="src/assets/MARISON-LOGO.png"
                 alt="Marison Hotel Logo"
-                className="h-24 w-24"
+                className="h-12 w-auto"
               />
             </a>
             {/*      <!-- Mobile trigger --> */}
@@ -112,7 +112,22 @@ const GuestNavBar = () => {
                   className="flex items-center gap-2 p-1 rounded-full focus:outline-none focus-visible:outline-none"
                   >
                     {/* Guest Avatar Image*/}
-                    <span className="text-lg font-bold px-4">USER</span>
+                    <div className="relative w-12 h-12 ml-6 overflow-hidden bg-gray-100 rounded-full ring-2 ring-offset-2 ring-gray-300 dark:ring-slate-400 dark:bg-slate-400 hover:ring-red-700">
+                      <svg
+                        className="absolute w-14 h-14 text-slate-300 -left-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                          clipRule="evenodd"
+                        ></path>
+                      </svg>
+                    </div>
+
+
                   </button>
                   {/* Dropdown menu */}
                   {isMenuOpen && (

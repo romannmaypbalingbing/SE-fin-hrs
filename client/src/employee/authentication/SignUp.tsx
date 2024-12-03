@@ -62,7 +62,7 @@ const SignUp: React.FC = () => {
             <h1 className="text-white text-xl font-sans italic font-medium mb-2">
               Already have an account?
             </h1>
-            <a href="/signin" className="bg-red-800 hover:bg-red-900 text-white font-normal py-2 px-4 rounded w-full mt-6">
+            <a href="/signin" className="bg-red-800 hover:bg-red-900 text-white font-normal py-2 px-4 rounded text-center w-full mt-6">
               Sign in
             </a>
             <div className="mt-4 flex items-center justify-between">
@@ -72,7 +72,7 @@ const SignUp: React.FC = () => {
                 </p>
               <span className="border-b w-1/5 lg:w-1/4"></span>
             </div>
-            <a href="/" className="bg-red-800 hover:bg-red-900 text-white font-normal py-2 px-4 rounded w-full mt-6">
+            <a href="/" className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6">
               Continue as Guest
             </a>
             {/* Add more buttons or content as needed */}
