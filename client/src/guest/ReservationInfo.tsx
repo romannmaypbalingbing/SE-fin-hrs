@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
-import supabase from '../supabaseClient'; // Properly import Supabase client
+import supabase from '../supabaseClient';
 
 const ReservationInfo: React.FC = () => {
     const [checkIn, setCheckIn] = useState('');
@@ -15,29 +15,66 @@ const ReservationInfo: React.FC = () => {
         if (checkIn && checkOut && paxAdult && paxChildren) {
             try {
                 console.log({ checkIn, checkOut, paxAdult, paxChildren });
-
+    
                 const checkInDate = new Date(checkIn).toISOString();
                 const checkOutDate = new Date(checkOut).toISOString();
-
+                const requiredRooms = parseInt(paxAdult, 10); // Number of rooms needed
+    
+                // Step 1: Check for available rooms
+                const { data: reservedRooms, error: reservationError } = await supabase
+                    .from('reservation')
+                    .select('room_id')
+                    .or(`
+                        check_in_date.lt.${checkOutDate},check_out_date.gt.${checkInDate}
+                    `); // Fetch reservations overlapping the specified dates
+    
+                if (reservationError) {
+                    console.error('Reservation Check Error:', reservationError);
+                    alert('Failed to check room availability. Please try again.');
+                    return;
+                }
+    
+                const reservedRoomIds = reservedRooms.map(reservation => reservation.room_id);
+    
+                const { data: availableRooms, error: roomError } = await supabase
+                    .from('rooms')
+                    .select('id, capacity')
+                    .not('id', 'in', reservedRoomIds); // Fetch rooms not reserved
+    
+                if (roomError) {
+                    console.error('Room Availability Check Error:', roomError);
+                    alert('Failed to check room availability. Please try again.');
+                    return;
+                }
+    
+                if (!availableRooms || availableRooms.length < requiredRooms) {
+                    alert(
+                        `Not enough rooms available for ${requiredRooms} adults. Only ${availableRooms.length} rooms are available.`
+                    );
+                    return;
+                }
+    
+                // Log the available rooms for debugging
+                console.log('Available rooms:', availableRooms);
+    
+                // Step 2: Insert the reservation
                 const { data: insertData, error: insertError } = await supabase
-                    .from('reservations')
+                    .from('reservation')
                     .insert([
                         {
-                            
                             check_in_date: checkInDate,
                             check_out_date: checkOutDate,
                             pax_adult: parseInt(paxAdult, 10),
                             pax_child: parseInt(paxChildren, 10),
-                        }
+                        },
                     ]);
-
+    
                 if (insertError) {
                     console.error('Insert Error:', insertError);
                     alert('Failed to save reservation. Please check the logs.');
-                    console.log('Failed to save reservation:', insertError);
                     return;
                 }
-
+    
                 console.log('Data inserted successfully:', insertData);
                 alert('Reservation saved successfully!');
                 navigate('/book-room');
