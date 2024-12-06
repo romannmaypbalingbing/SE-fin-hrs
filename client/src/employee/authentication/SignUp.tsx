@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import marisonfront from '../../assets/marisonfront.png';
 import marisonlogo from '../../assets/MARISON-LOGO.png';
 import supabase from '../../supabaseClient';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
 const SignUp: React.FC = () => {
   const [email, setEmail] = React.useState('');
@@ -14,36 +14,34 @@ const SignUp: React.FC = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (password !== confirmPassword) {
       alert('Password does not match. Please re-enter password.');
       return;
     }
-
-    const userId = uuidv4();
+  
     try {
-      const { data: insertData, error: insertError } = await supabase
-        .from('guest_user')
-        .insert([
-          {
-            user_id: userId,
-            user_email: email,
-            user_password: password,
-            user_role: 'guest',
-          },
-        ]);
-
-      if (insertError) {
-        console.error('Insert Error:', insertError);
-        throw new Error(insertError?.message || 'Signup failed');
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: ['guest'] // Assign the 'user' role
+          }
+        }
+      });
+  
+      if (error) {
+        console.error('Error signing up:', error);
+        alert('Sign up failed: ' + error.message);
+        return;
       }
-
-      console.log('Data inserted successfully:', insertData);
-      alert('Signup successful!');
-      navigate('/signin'); // Navigate to login page on success
+  
+      alert('Sign up successful!');
+      navigate('/signin');
     } catch (error: any) {
-      console.error('Error during signup:', error.message);
-      alert('Signup failed: ' + error.message);
+      console.error('Error during sign up:', error.message);
+      alert('Sign up failed: ' + error.message);
     }
   };
     
@@ -185,7 +183,7 @@ const SignUp: React.FC = () => {
 
           <div className="mt-4 flex items-center justify-between">
             <span className="border-b w-1/5 md:w-1/4"></span>
-            <a href="/reservation-info" className="text-xs text-gray-500 uppercase hover:text-amber-700">
+            <a href="/signin" className="text-xs text-gray-500 uppercase hover:text-amber-700">
               or sign in
             </a>
             <span className="border-b w-1/5 md:w-1/4"></span>

@@ -12,55 +12,53 @@ const SignIn: React.FC = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
-      if (error) {
-        console.error('Sign in error:', error);
-        alert('Sign in failed: ' + error.message);
-      } else {
-        // If sign-in successful, get user data
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (user) {
-          // Check if user exists in guest_user table
-          const { data, error: fetchError } = await supabase
-            .from('guest_user')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
   
-            if (fetchError) {
-              console.error('Error fetching user data:', fetchError);
-              alert('Error fetching user data.');
-            } else if (data) {
-              console.log('Sign in successful:', data);
-              alert('Sign in successful!');
-              // Redirect reservation info page
-              if (data.user_role === 'guest') {
-                navigate('/reservation-info'); 
-              } else if (data.user_role === 'employee') {
-                navigate('/dashboard'); 
-              } else {
-                // Handle other roles
-                alert('User role not recognized.');
-              }
-            } else {
-              alert('User not found in database.');
-            }
-          } else {
-            alert('User data not available after sign in.');
-          }
-        }
-      } catch (error: any) {
-        console.error('Error during sign in:', error);
-        alert('Sign in failed.');
+      if (signInError) {
+        console.error('Sign in error:', signInError);
+        alert('Sign in failed: ' + signInError.message);
+        return;
       }
-    };
+  
+      const { data, error: userDataError } = await supabase.auth.getUser();
+  
+      if (userDataError) {
+        console.error('Error fetching user data:', userDataError);
+        alert('Error fetching user data.');
+        return;
+      }
+  
+      const user = data?.user;
+  
+      if (user) {
+        const userRoles = user.user_metadata?.role;
+  
+        // Ensure `role` is an array before processing
+        if (Array.isArray(userRoles)) {
+          if (userRoles.includes('employee')) {
+            navigate('/dashboard');
+          } else if (userRoles.includes('guest')) {
+            navigate('/reservation-info');
+          } else {
+            alert('User role not recognized.');
+          }
+        } else {
+          alert('User roles data is invalid.');
+        }
+      } else {
+        alert('User data not available.');
+      }
+    } catch (error) {
+      console.error('Error during sign in:', error);
+      alert('Sign in failed.');
+    }
+  };
+  
   
 
   return (
