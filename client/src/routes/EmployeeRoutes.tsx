@@ -34,7 +34,9 @@ function Employee_Page() {
   ) : (
     <DefaultLayout>
       <Routes>
-        <Route index element={
+        <Route 
+        index 
+        element={
             <>
               <PageTitle title="Hotel Reservation Dashboard" />
               <Dashboard />

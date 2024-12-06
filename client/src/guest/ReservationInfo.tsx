@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
-import { supabase } from '../supabaseClient';
+import supabase from '../supabaseClient'; // Properly import Supabase client
 
-const ReservationInfo = ({ supabase }) => {
+const ReservationInfo: React.FC = () => {
     const [checkIn, setCheckIn] = useState('');
     const [checkOut, setCheckOut] = useState('');
     const [paxAdult, setPaxAdult] = useState('');
@@ -14,55 +14,33 @@ const ReservationInfo = ({ supabase }) => {
     const handleSearch = async () => {
         if (checkIn && checkOut && paxAdult && paxChildren) {
             try {
-                // Log the input values for debugging
                 console.log({ checkIn, checkOut, paxAdult, paxChildren });
-    
-                // Convert the check-in and check-out dates to valid timestamp format (if not already in the correct format)
+
                 const checkInDate = new Date(checkIn).toISOString();
                 const checkOutDate = new Date(checkOut).toISOString();
-    
-                // Insert reservation data into Supabase
+
                 const { data: insertData, error: insertError } = await supabase
-                    .from('reservation')
+                    .from('reservations')
                     .insert([
                         {
-                            res_checkin: checkInDate,
-                            res_checkout: checkOutDate,
-                            res_paxadult: parseInt(paxAdult, 10),
-                            res_paxchild: parseInt(paxChildren, 10)
+                            
+                            check_in_date: checkInDate,
+                            check_out_date: checkOutDate,
+                            pax_adult: parseInt(paxAdult, 10),
+                            pax_child: parseInt(paxChildren, 10),
                         }
-                    ], {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-    
+                    ]);
+
                 if (insertError) {
                     console.error('Insert Error:', insertError);
                     alert('Failed to save reservation. Please check the logs.');
+                    console.log('Failed to save reservation:', insertError);
                     return;
                 }
-    
+
                 console.log('Data inserted successfully:', insertData);
-    
-                // Verify if the data is stored in the database
-                const { data: verifyData, error: verifyError } = await supabase
-                    .from('reservation')
-                    .select('*')
-                    .eq('res_checkin', checkInDate)
-                    .eq('res_checkout', checkOutDate);
-    
-                if (verifyError) {
-                    console.error('Error verifying data:', verifyError);
-                    alert('Error verifying reservation. Please try again.');
-                } else if (verifyData.length > 0) {
-                    console.log('Data successfully verified:', verifyData);
-                    alert('Reservation saved successfully!');
-                    navigate('/book-room');
-                } else {
-                    console.log('Inserted data not found in database.');
-                    alert('Something went wrong. Please try again.');
-                }
+                alert('Reservation saved successfully!');
+                navigate('/book-room');
             } catch (err) {
                 console.error('Unexpected Error:', err);
                 alert('An unexpected error occurred. Check console logs.');
@@ -74,7 +52,7 @@ const ReservationInfo = ({ supabase }) => {
 
     return (
         <div className="bg-slate-100 h-screen relative">
-            <GuestNavBar /> 
+            <GuestNavBar />
             <Stepper />
             <div className="flex justify-center items-start h-screen pt-20">
                 <div className="bg-white p-6 w-1/2 shadow-md rounded-lg">
@@ -136,7 +114,6 @@ const ReservationInfo = ({ supabase }) => {
             </div>
         </div>
     );
-    
-}
+};
 
 export default ReservationInfo;

@@ -9,6 +9,8 @@
     "npm:@supabase/realtime-js@2.10.9": "2.10.9",
     "npm:@supabase/storage-js@2.7.1": "2.7.1",
     "npm:@supabase/supabase-js@^2.46.2": "2.46.2",
+    "npm:@types/node@*": "22.5.4",
+    "npm:dotenv@^16.4.7": "16.4.7",
     "npm:uuid@^11.0.3": "11.0.3"
   },
   "jsr": {
@@ -89,6 +91,9 @@
       "dependencies": [
         "@types/node"
       ]
+    },
+    "dotenv@16.4.7": {
+      "integrity": "sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ=="
     },
     "tr46@0.0.3": {
       "integrity": "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="

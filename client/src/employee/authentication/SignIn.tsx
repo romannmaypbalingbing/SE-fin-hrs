@@ -2,49 +2,66 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import marisonfront from '../../assets/marisonfront.png';
 import marisonlogo from '../../assets/MARISON-LOGO.png';
-// import supabase from '../../supabaseClient';
+import supabase from '../../supabaseClient';
 
 const SignIn: React.FC = () => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
 
   const navigate = useNavigate();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if(password !== confirmPassword) {
-      alert('Password does not match. Please re-enter password.');
-      return;
-    }
-
     try {
-      const response = await fetch('http://localhost:8000/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (error) {
+        console.error('Sign in error:', error);
+        alert('Sign in failed: ' + error.message);
+      } else {
+        // If sign-in successful, get user data
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // Check if user exists in guest_user table
+          const { data, error: fetchError } = await supabase
+            .from('guest_user')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
   
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Signin failed');
+            if (fetchError) {
+              console.error('Error fetching user data:', fetchError);
+              alert('Error fetching user data.');
+            } else if (data) {
+              console.log('Sign in successful:', data);
+              alert('Sign in successful!');
+              // Redirect reservation info page
+              if (data.user_role === 'guest') {
+                navigate('/reservation-info'); 
+              } else if (data.user_role === 'employee') {
+                navigate('/dashboard'); 
+              } else {
+                // Handle other roles
+                alert('User role not recognized.');
+              }
+            } else {
+              alert('User not found in database.');
+            }
+          } else {
+            alert('User data not available after sign in.');
+          }
+        }
+      } catch (error: any) {
+        console.error('Error during sign in:', error);
+        alert('Sign in failed.');
       }
+    };
   
-      const data = await response.json();
-      console.log(data.message);
-      alert('Signin successful!');
-      navigate('/'); // Navigate to login page on success
-    } catch (error: any) {
-      console.error('Error during signin:', error.message);
-      alert('Signin failed: ' + error.message);
-    }
-  };
 
   return (
     <div className="bg-slate-100 flex justify-center items-center h-screen">
@@ -72,7 +89,7 @@ const SignIn: React.FC = () => {
                 </p>
               <span className="border-b w-1/5 lg:w-1/4"></span>
             </div>
-            <a href="/" className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6">
+            <a href="/reservation-info" className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6">
               Continue as Guest
             </a>
             {/* Add more buttons or content as needed */}

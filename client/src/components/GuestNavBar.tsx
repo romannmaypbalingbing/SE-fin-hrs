@@ -106,7 +106,7 @@ const GuestNavBar = () => {
               </button>
 
               {/* Guest Avatar with dropdown menu */}
-              <div class name="relative ml-4">
+              <div className="relative ml-4">
                 <button
                   onClick={toggleMenu}
                   className="flex items-center gap-2 p-1 rounded-full focus:outline-none focus-visible:outline-none"

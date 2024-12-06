@@ -2,7 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import marisonfront from '../../assets/marisonfront.png';
 import marisonlogo from '../../assets/MARISON-LOGO.png';
-// import supabase from '../../supabaseClient';
+import supabase from '../../supabaseClient';
+import { v4 as uuidv4 } from 'uuid';
 
 const SignUp: React.FC = () => {
   const [email, setEmail] = React.useState('');
@@ -14,30 +15,30 @@ const SignUp: React.FC = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if(password !== confirmPassword) {
+    if (password !== confirmPassword) {
       alert('Password does not match. Please re-enter password.');
       return;
     }
 
+    const userId = uuidv4();
     try {
-      const response = await fetch('http://localhost:8000/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-  
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Signup failed');
+      const { data: insertData, error: insertError } = await supabase
+        .from('guest_user')
+        .insert([
+          {
+            user_id: userId,
+            user_email: email,
+            user_password: password,
+            user_role: 'guest',
+          },
+        ]);
+
+      if (insertError) {
+        console.error('Insert Error:', insertError);
+        throw new Error(insertError?.message || 'Signup failed');
       }
-  
-      const data = await response.json();
-      console.log(data.message);
+
+      console.log('Data inserted successfully:', insertData);
       alert('Signup successful!');
       navigate('/signin'); // Navigate to login page on success
     } catch (error: any) {
@@ -45,6 +46,8 @@ const SignUp: React.FC = () => {
       alert('Signup failed: ' + error.message);
     }
   };
+    
+ 
 
   return (
     <div className="bg-slate-100 flex justify-center items-center h-screen">
@@ -72,10 +75,12 @@ const SignUp: React.FC = () => {
                 </p>
               <span className="border-b w-1/5 lg:w-1/4"></span>
             </div>
-            <a href="/" className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6">
+            <a href="/reservation-info" 
+               className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6"
+               onClick={() => navigate('/guest-info')}
+            >
               Continue as Guest
             </a>
-            {/* Add more buttons or content as needed */}
           </div>
         </div>
 
@@ -180,7 +185,7 @@ const SignUp: React.FC = () => {
 
           <div className="mt-4 flex items-center justify-between">
             <span className="border-b w-1/5 md:w-1/4"></span>
-            <a href="/login" className="text-xs text-gray-500 uppercase hover:text-amber-700">
+            <a href="/reservation-info" className="text-xs text-gray-500 uppercase hover:text-amber-700">
               or sign in
             </a>
             <span className="border-b w-1/5 md:w-1/4"></span>
