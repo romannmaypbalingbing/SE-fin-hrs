@@ -18,7 +18,6 @@ import DefaultLayout from '../layout/DefaultLayout';
 import Dashboard from '../pages/Dashboard/Dashboard';
 
 function EmployeeRoutes() {
-  console.log('EmployeeRoutes Component Rendered');
   const [loading, setLoading] = useState<boolean>(true);
   const { pathname } = useLocation();
 

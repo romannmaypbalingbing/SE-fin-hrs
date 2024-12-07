@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
 import supabase from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface RoomDetails{
     roomtype_id: number;
@@ -12,11 +12,29 @@ interface RoomDetails{
     roomtype_totalrooms: number;
 }
 
+interface ReservationState {
+    checkInDate: string;
+    checkOutDate: string;
+}
+
+
 const BookaRoom: React.FC = () => {
+    const location = useLocation();
+
+    const [checkInDate, setCheckInDate] = useState<string>('');
+    const [checkOutDate, setCheckOutDate] = useState<string>('');
     const [roomDetailsList, setRoomDetailsList] = useState<RoomDetails[]>([]);
     const [selectedRoom, setSelectedRoom] = useState<RoomDetails | null>(null);
     const [stayDuration, setStayDuration] = useState<number>(0);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if(location.state){
+            const {checkInDate, checkOutDate} = location.state as ReservationState;
+            setCheckInDate(checkInDate);
+            setCheckOutDate(checkOutDate);
+        }
+    }, [location.state]);
 
     //fetch room details to display data from the database
     useEffect(() => {
@@ -26,7 +44,6 @@ const BookaRoom: React.FC = () => {
                     .from('room_type')
                     .select('*')
                     console.log(data);
-                    
 
                 if(error){
                     console.error('Error fetching room details:', error);
@@ -46,40 +63,39 @@ const BookaRoom: React.FC = () => {
 
     // const handleShowMore = () => {
     // }
-
-    const computeStayDuration = async (reservationID: number) => {
+    console.log('checkInDate:', checkInDate);
+    console.log('checkOutDate:', checkOutDate);
+  
+    //computeStayDuration function to compute the duration of stay
+    const computeStayDuration = (checkInDateStr: string, checkOutDateStr: string) => {
         try {
-            const { data, error } = await supabase
-                .from('reservation')
-                .select('check_in_date, check_out_date')
-                .eq('reservation_id', reservationID)
-                
-                if (data && data.length > 0) {
-                    const checkIn = new Date(data[0].check_in_date);
-                    const checkOut = new Date(data[0].check_out_date);
-                    const duration = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-                    setStayDuration(duration);
-                }
-
-            if (error) {
-                console.error('Error fetching reservation details:', error);
-                return;
-            }
+            const checkInDate = new Date(checkInDateStr);
+            const checkOutDate = new Date(checkOutDateStr);
+            const duration = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+            setStayDuration(duration);
         } catch (error) {
-            console.error('Unexpected error:', error);
+            setStayDuration
+            console.error('Error computing stay duration:', error);
         }
     };
+        console.log('Stay duration:', stayDuration);
+
+        useEffect(() => {
+            if (checkInDate && checkOutDate) {
+                computeStayDuration(checkInDate, checkOutDate);
+            }
+        }, [checkInDate, checkOutDate]);
         
-        //handleBookNow function to handle the selected room and display to summary
-    const handleBookNow = (room: RoomDetails, reservationID: number) => {
+    //handleBookNow function to handle the selected room and display to summary
+    const handleBookNow = (room: RoomDetails) => {
         setSelectedRoom(room);
-        computeStayDuration(reservationID);
+        computeStayDuration(checkInDate, checkOutDate);
     };
 
     // Proceed to payment
     const handleProceedToPayment = () => {
         if (selectedRoom) {
-            navigate('/payment-info');
+            navigate('/guest/payment-info');
         } else {
             alert('Please select a room to proceed to payment.');
         }
@@ -115,7 +131,7 @@ const BookaRoom: React.FC = () => {
 
                                     {/* Room Capacity */}
                                     <div className="flex items-center text-left mb-2">
-                                        <p className="text-base font-medium text-slate-600 ml-2 px-1">2 Adults | 2 Children</p>
+                                        <p className="text-base font-medium text-slate-600 ml-2 px-1">{roomDetailsList[0].roomtype_capacity}</p>
                                     </div>
 
                                     {/* Room Details */}
@@ -197,7 +213,7 @@ const BookaRoom: React.FC = () => {
 
                                             <button
                                                 className="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded"
-                                                onClick={() => reservationID && handleBookNow(roomDetailsList[0], reservationID)}
+                                                onClick={() => handleBookNow(roomDetailsList[0])}
                                             >
                                                 Book Now
                                             </button>
@@ -213,33 +229,60 @@ const BookaRoom: React.FC = () => {
                  <div className="bg-white p-4 shadow-md rounded-lg h-full self-start">
                     <h2 className="text-xl font-semibold text-slate-800 mb-2 mt-3 px-2">Selected Rooms</h2>
                     <div className="flex flex-col gap-4">
-                        <div className="bg-white p-5 shadow-md rounded-lg">
-                        {/* Summary details */}
-                        <div className="data py-3 border-b border-gray-200">
-                            <div className="flex justify-between items-start gap-4 mb-5">
-                            {/* Room Type Name */}
-                            <div className="flex flex-col">
-                                <p className="font-medium text-medium leading-8 text-slate-700 text-left">
-                                {selectedRoom?.roomtype_name}
-                                </p>
-                                {/* Number of Nights */}
-                                <p className="text-sm text-gray-500">
-                                    {stayDuration} {stayDuration > 1 ? 'nights' : 'night'}
-                                </p>
-                            </div>
-                            {/* Price */}
-                            <p className="text-xl font-semibold text-slate-800">
-                                {selectedRoom?.roomtype_price}
-                            </p>
+                        <div className="bg-slate-50 p-5 shadow-md rounded-lg">
+                            {/* Summary details */}
+                            <div className="data py-2 border-gray-200">
+                                <div className="flex justify-between items-start gap-4 mb-5">
+                                    {/* Room Type Name */}
+                                    <div className="flex flex-col">
+                                        <p className="font-medium text-medium leading-8 text-slate-700 text-left">
+                                            {selectedRoom?.roomtype_name}
+                                        </p>
+                                        {/* Number of Nights */}
+                                        <p className="text-sm text-gray-500">
+                                            {stayDuration} {stayDuration > 1 ? 'nights' : 'night'}
+                                        </p>
+                                    </div>
+                                    {/* Price */}
+                                    <p className="text-xl font-semibold text-slate-800">
+                                        {selectedRoom?.roomtype_price}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         
+                        <h2
+                            className="font-manrope font-semibold text-m leading-10 text-slate-700 pb-2 border-b border-gray-200 ">
+                            Order Summary
+                        </h2>
+                        <div className="data border-b border-gray-200">
+                            <div className="flex items-center justify-between gap-4 mb-2">
+                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700">Product Cost</p>
+                                <p className="font-medium text-lg leading-8 text-gray-900">$360.00</p>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 mb-2">
+                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700">Shipping</p>
+                                <p className="font-medium text-lg leading-8 text-gray-600">$40.00</p>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 ">
+                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700 ">Coupon Code</p>
+                                <p className="font-medium text-lg leading-8 text-emerald-500">#APPLIED</p>
+                            </div>
                         </div>
-                        <button className="mt-4 px-4 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800">
-                        Proceed to Payment
+                        <div className="total flex items-center justify-between pt-6">
+                            <p className="font-normal text-xl leading-8 text-black ">Subtotal</p>
+                            <h5 className="font-manrope font-bold text-2xl leading-9 text-black">$400.00</h5>
+                        </div>
+                    
+
+                        <button 
+                            className="mt-4 px-4 py-2 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800"
+                            onClick={handleProceedToPayment}
+                        >
+                            Proceed to Payment
                         </button>
                     </div>
-                    </div>
+                </div>
 
                 
                 
@@ -253,7 +296,7 @@ const BookaRoom: React.FC = () => {
                             <div className="bg-white flex justify-center items-center">
                                 <div className="flex flex-col">
                                     {/* Title */}
-                                    <h2 className="text-2xl font-semibold text-red-700 text-left mb-2 px-3">Deluxe King Mayon View</h2>
+                                    <h2 className="text-2xl font-semibold text-red-700 text-left mb-2 px-3">{roomDetailsList[1].roomtype_name}</h2>
 
                                     {/* Room Image */}
                                     <a href="/book-a-room" className="text-xl font-bold text-slate-600 text-left">
@@ -288,7 +331,7 @@ const BookaRoom: React.FC = () => {
 
                             {/* Price and Features */}
                             <div className="col-span-2 bg-white p-6 shadow-md rounded-base text-left">
-                                <span className="text-3xl font-bold text-slate-700 text-left">PHP 4,900 </span>
+                                <span className="text-3xl font-bold text-slate-700 text-left">PHP {roomDetailsList[1].roomtype_price} </span>
                                 <span className="text-2xl font-semibold text-slate-400">/night</span>
                                 <div className="flex flex-col mt-4">
                                     <div className="grid grid-cols-3 gap-4">

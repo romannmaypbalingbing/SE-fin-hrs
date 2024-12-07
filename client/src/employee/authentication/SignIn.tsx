@@ -43,7 +43,7 @@ const SignIn: React.FC = () => {
         if (Array.isArray(userRoles)) {
           if (userRoles.includes('employee')) {
             console.log('User is an employee.');
-            navigate('/employee/dashboard');
+            navigate('/');
           } else if (userRoles.includes('guest')   ) {
             navigate('/guest/reservation-info');
           } else {
