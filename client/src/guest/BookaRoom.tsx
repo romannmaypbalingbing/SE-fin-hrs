@@ -1,13 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
-interface BookaRoomProps {
-    supabase: SupabaseClient;
+interface RoomDetails{
+    id: number;
+    room_type: string;
+    price: number;
+    capacity: string;
 }
 
-const BookaRoom: React.FC<BookaRoomProps> = ({ supabase }) => {
+
+const BookaRoom: React.FC = () => {
+//     const [roomDetailsList, setRoomDetailsList] = useState<RoomDetails[]>([]);
+//     const navigate = useNavigate();
+
+//     useEffect(() => {
+//         const fetchRoomDetails = async () => {
+//             try {
+//                 const { data, error } = await supabase
+//                     .from('room_type')
+//                     .select('*')
+//                     console.log(data);
+
+//                 if(error){
+//                     console.
+//                 }
+//             }
+
+//     }
+
+
+    // const
     return (
         <div className="bg-slate-100 w-full"> {/* Set background to slate-100 */}
             <GuestNavBar />

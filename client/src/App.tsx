@@ -1,34 +1,66 @@
-// import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import supabase from './supabaseClient';
+import Loader from './components/Loader/Loader';
 
+import GuestRoutes from './routes/GuestRoutes'; // Import guest-specific routes
 import SignUp from './employee/authentication/SignUp';
 import SignIn from './employee/authentication/SignIn';
-// import GuestRoute from './routes/GuestRoutes';
 import EmployeeRoute from './routes/EmployeeRoutes';
-import ReservationInfo from './guest/ReservationInfo';
 
 const App: React.FC = () => {
-  // const [userRole, setUserRole] = useState<string| null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // const handleLogin= (role: string) => {
-  //   setUserRole(role);
-  // };
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        // see if the user is logged in
+        const { data, error } = await supabase.auth.getUser();
+        console.log(data);
 
+        if (error) {
+          console.error('Error fetching user:', error);
+          setUserRole(null);
+          setLoading(false);
+          return;
+        }
+
+        if (data && data.user) {
+          //get the user role
+            setUserRole(data.user.user_metadata?.role || null);
+            console.log(setUserRole);
+          }
+
+      
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    }
+    })
+        
+        
   return (
-          <Routes>
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/dashboard" element={<EmployeeRoute />} />
-            <Route path="/reservation-info" element={<ReservationInfo/>} />
+    <Routes>
+      {/* Authentication Routes */}
+      <Route path="/signup" element={<SignUp />} />
+      <Route path="/signin" element={<SignIn />} />
 
-           {/* Conditionally render routes based on userRole */}
-            {/* <Route path="/guest" element={userRole === 'guest' ? <GuestRoute /> : <Navigate to="/login" />} /> */}
-            {/* <Route path="/employee" element={userRole === 'employee' ? <EmployeeRoute /> : <Navigate to="/login" />} /> */}
-            {/* <Route path="/admin" element={userRole === 'admin' ? <AdminPage /> : <Navigate to="/login" />} /> */}
+      {/* Conditional Guest or Employee Routes */}
+      {userRole === 'guest' || userRole === null ? (
+        // Render guest-specific routes
+        <Route path="/*" element={<GuestRoutes />} />
+      ) : (
+        // Render employee-specific routes
+        <Route
+          path="/dashboard"
+          element={userRole === 'employee' ? <EmployeeRoute /> : <Navigate to="/signin" />}
+        />
+      )}
 
-        {/* Redirect to login if no role or invalid route */}
-        {/* <Route path="" element={<Navigate to="/login" />} />  */}
-          </Routes>
+      {/* Catch-All Redirect */}
+      <Route path="*" element={<Navigate to="/signin" />} />
+    </Routes>
   );
 };
 
