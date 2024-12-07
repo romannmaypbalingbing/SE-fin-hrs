@@ -65,7 +65,7 @@ const ReservationInfo: React.FC = () => {
     
                 // Step 3: Proceed with reservation or navigation
                 alert('Rooms are available!');
-                navigate('/book-room'); 
+                navigate('/guest/book-room'); 
     
             } catch (err) {
                 console.error('Unexpected Error:', err);

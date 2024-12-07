@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 
-import Loader from '../components/Loader/Loader.tsx';
+import Loader from '../components/Loader/Loader';
 import PageTitle from '../components/PageTitle';
 import SignIn from '../pages/Authentication/SignIn';
 import SignUp from '../pages/Authentication/SignUp';
@@ -15,9 +15,10 @@ import Tables from '../pages/Tables';
 import Alerts from '../pages/UiElements/Alerts';
 import Buttons from '../pages/UiElements/Buttons';
 import DefaultLayout from '../layout/DefaultLayout';
-import Dashboard from '../pages/Dashboard/Dashboard.tsx';
+import Dashboard from '../pages/Dashboard/Dashboard';
 
-function Employee_Page() {
+function EmployeeRoutes() {
+  console.log('EmployeeRoutes Component Rendered');
   const [loading, setLoading] = useState<boolean>(true);
   const { pathname } = useLocation();
 
@@ -28,6 +29,8 @@ function Employee_Page() {
   useEffect(() => {
     setTimeout(() => setLoading(false), 1000);
   }, []);
+
+  console.log(loading);
 
   return loading ? (
     <Loader />
@@ -146,4 +149,4 @@ function Employee_Page() {
   );
 }
 
-export default Employee_Page;
+export default EmployeeRoutes;

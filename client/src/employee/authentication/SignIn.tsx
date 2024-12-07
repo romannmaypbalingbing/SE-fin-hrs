@@ -37,13 +37,15 @@ const SignIn: React.FC = () => {
   
       if (user) {
         const userRoles = user.user_metadata?.role;
+        console.log('User roles:', userRoles);
   
         // Ensure `role` is an array before processing
         if (Array.isArray(userRoles)) {
           if (userRoles.includes('employee')) {
-            navigate('/dashboard');
-          } else if (userRoles.includes('guest')) {
-            navigate('/reservation-info');
+            console.log('User is an employee.');
+            navigate('/employee/dashboard');
+          } else if (userRoles.includes('guest')   ) {
+            navigate('/guest/reservation-info');
           } else {
             alert('User role not recognized.');
           }
@@ -148,6 +150,7 @@ const SignIn: React.FC = () => {
             </label>
             <input
               className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 block w-full appearance-none"
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -162,6 +165,7 @@ const SignIn: React.FC = () => {
             </div>
             <input
               className="bg-slate-100 text-gray-700 focus:outline-none focus:shadow-outline border border-gray-300 rounded py-1 block w-full appearance-none"
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
 // import DateTimePicker from '../components/DateTimePicker';
+import supabase from '../supabaseClient';
 
 interface Guest{ 
     id: string;
