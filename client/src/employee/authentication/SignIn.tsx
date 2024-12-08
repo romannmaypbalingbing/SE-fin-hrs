@@ -43,8 +43,8 @@ const SignIn: React.FC = () => {
         if (Array.isArray(userRoles)) {
           if (userRoles.includes('employee')) {
             console.log('User is an employee.');
-            navigate('/');
-          } else if (userRoles.includes('guest')   ) {
+            navigate('/employee/dashboard');
+          } else if (userRoles.includes('guest')) {
             navigate('/guest/reservation-info');
           } else {
             alert('User role not recognized.');
@@ -89,7 +89,7 @@ const SignIn: React.FC = () => {
                 </p>
               <span className="border-b w-1/5 lg:w-1/4"></span>
             </div>
-            <a href="/reservation-info" className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6">
+            <a href="/guest/reservation-info" className="bg-red-800 hover:bg-red-900 text-white font-normal text-center py-2 px-4 rounded w-full mt-6">
               Continue as Guest
             </a>
             {/* Add more buttons or content as needed */}

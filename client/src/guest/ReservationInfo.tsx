@@ -92,6 +92,7 @@ const ReservationInfo: React.FC = () => {
         state: {
             checkInDate,
             checkOutDate,
+            paxAdult,
         }
       });
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
-// import DateTimePicker from '../components/DateTimePicker';
 import supabase from '../supabaseClient';
 
 interface Guest{ 
@@ -23,11 +23,13 @@ interface Guest{
 interface Payment{
     cardName: string;
     cardNumber: string;
-    expirationDate: string;
+    expDateMonth: string;
+    expDateYear: string;
     securityCode: string;
 }
 
 const GuestInfo = () => {
+    const navigate = useNavigate();
     
     const [guests, setGuests] = useState<Guest[]>([
         {
@@ -48,7 +50,8 @@ const GuestInfo = () => {
     const [payment, setPayment] = useState<Payment>({
         cardName: '',
         cardNumber: '',
-        expirationDate: '',
+        expDateMonth: '',
+        expDateYear: '',
         securityCode: '',
     });
 
@@ -97,6 +100,55 @@ const GuestInfo = () => {
         setArrivalDateTime(evt.target.value);
   };
 
+  const submitGuestInfo = async () => {
+    try {
+        const { data: guestData, error: guestError } = await supabase
+            .from('guests_info')
+            .insert(
+                guests.map(guest => ({
+                    guest_firstname: guest.formData.firstName,
+                    guest_lastname: guest.formData.lastName,
+                    guest_email: guest.formData.email,
+                    guest_contactno: guest.formData.contactNumber,
+                    guest_address: guest.formData.address,
+                    guest_country: guest.formData.country,
+                    guest_requests: guest.formData.notesandRequests,
+                })
+            ))
+            if (guestError) {
+                console.error('Error inserting guest data:', guestError);
+                alert('Error inserting guest data. Please try again later.');
+                return;
+            }
+            console.log('Guest data inserted:', guestData);
+
+            const { data: paymentData, error: paymentError } = await supabase
+                .from('payment')
+                .insert([
+                    {
+                        card_name: payment.cardName,
+                        card_number: payment.cardNumber,
+                        exp_date_month: payment.expDateMonth,
+                        exp_date_year: payment.expDateYear,
+                        sec_Code: payment.securityCode,
+                    },
+                ]);
+            if (paymentError) {
+                console.error('Error inserting payment data:', paymentError);
+                alert('Error inserting payment data. Please try again later.');
+                return;
+            }
+
+            console.log('Payment data inserted:', paymentData);
+
+            alert('Payment and guest information submitted');
+            navigate('/guest/receipt')
+            
+    } catch (error) {
+        console.error('Error inserting guest data:', error);
+        alert('Error inserting guest data. Please try again later.');
+    }
+  }
 
 
     const country = [
@@ -459,7 +511,8 @@ const GuestInfo = () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <button className="block w-full max-w-xs mx-auto bg-red-800 hover:bg-red-900 focus:bg-red-900 text-white rounded-lg px-3 py-3 font-semibold">
+                                    <button className="block w-full max-w-xs mx-auto bg-red-800 hover:bg-red-900 focus:bg-red-900 text-white rounded-lg px-3 py-3 font-semibold"
+                                            onClick={submitGuestInfo}>
                                         <i className="mdi mdi-lock-outline mr-1"></i> Confirm
                                     </button>
                                 </div>
@@ -472,5 +525,5 @@ const GuestInfo = () => {
             </div>    
         );
     }
-    
+
 export default GuestInfo;

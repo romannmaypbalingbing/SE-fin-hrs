@@ -1,6 +1,11 @@
 import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
+import supabase from '../supabaseClient';
 
 const Calendar = () => {
+  const { data, error } = supabase
+    .from('booking')
+    .select('check_in_date, check_out_date');
+  
   return (
     <>
       <Breadcrumb pageName="Calendar" />

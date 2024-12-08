@@ -37,7 +37,7 @@ function EmployeeRoutes() {
     <DefaultLayout>
       <Routes>
         <Route 
-        index 
+        path="/dashboard"
         element={
             <>
               <PageTitle title="Hotel Reservation Dashboard" />
@@ -45,6 +45,15 @@ function EmployeeRoutes() {
             </>
         }
         /> 
+        <Route
+          path="/tables"
+          element={
+            <>
+              <PageTitle title="Tables" />
+              <Tables />
+            </>
+          }
+        />
         <Route
           path="/calendar"
           element={
@@ -80,15 +89,7 @@ function EmployeeRoutes() {
             </>
           }
         />
-        <Route
-          path="/tables"
-          element={
-            <>
-              <PageTitle title="Tables  " />
-              <Tables />
-            </>
-          }
-        />
+        
         <Route
           path="/settings"
           element={

@@ -58,14 +58,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   return (
     <aside
       ref={sidebar}
-      className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden bg-white shadow-right shadow-lg duration-300 ease-linear dark:bg-boxdark lg:static lg:translate-x-0 outline outline-3 outline-slate-200 ${
+      className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden bg-800 shadow-right shadow-lg duration-300 ease-linear dark:bg-boxdark lg:static lg:translate-x-0 outline outline-3 outline-slate-200 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
       {/* <!-- SIDEBAR HEADER --> */}
       <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
         <NavLink to="/dashboard">
-          <img src="src/assets/MARISON-LOGO.png" alt="Logo" className="flex w-32 h-12 items-center" /> {/* !! insert marison*/}
+          <img src="src/assets/MARISON-LOGO.png" alt="Logo" className="flex w-32 h-11 items-center" /> {/* !! insert marison*/}
         </NavLink>
 
         <button
@@ -107,7 +107,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
                   <li>
                   <NavLink
-                    to="/"
+                    to="/employee/dashboard"
                     className={({ isActive }) => 
                       `group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium duration-300 ease-in-out hover:bg-slate-100 dark:hover:bg-meta-4 ${
                         isActive ? 'bg-red-900 dark:bg-meta-4 text-white' : 'text-slate-500' 
@@ -148,7 +148,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     {/* <!-- Menu Item Tables --> */}
               <li>
               <NavLink
-                    to="/tables"
+                    to="/employee/tables"
                     className={({ isActive }) => 
                       `group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium duration-300 ease-in-out hover:bg-slate-100 dark:hover:bg-meta-4 ${
                         isActive ? 'bg-red-900 dark:bg-meta-4 text-white' : 'text-slate-500' 
@@ -187,7 +187,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               {/* <!-- Menu Item Calendar --> */}
               <li>
               <NavLink
-                    to="/calendar"
+                    to="/employee/calendar"
                     className={({ isActive }) => 
                       `group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium duration-300 ease-in-out hover:bg-slate-100 dark:hover:bg-meta-4 ${
                         isActive ? 'bg-red-900 dark:bg-meta-4 text-white' : 'text-slate-500' 
@@ -215,7 +215,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               {/* <!-- Menu Item Profile --> */}
               <li>
               <NavLink
-                    to="/profile"
+                    to="/employee/profile"
                     className={({ isActive }) => 
                       `group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium duration-300 ease-in-out hover:bg-slate-100 dark:hover:bg-meta-4 ${
                         isActive ? 'bg-red-900 dark:bg-meta-4 text-white' : 'text-slate-500' 
@@ -248,7 +248,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               {/* <!-- Menu Item Settings --> */}
               <li>
               <NavLink
-                    to="/settings"
+                    to="/employee/settings"
                     className={({ isActive }) => 
                       `group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium duration-300 ease-in-out hover:bg-slate-100 dark:hover:bg-meta-4 ${
                         isActive ? 'bg-red-900 dark:bg-meta-4 text-white' : 'text-slate-500' 

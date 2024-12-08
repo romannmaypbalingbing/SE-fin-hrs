@@ -5,7 +5,7 @@ const ReceiptCard: React.FC = () => {
     <div className="flex h-screen w-full items-center justify-center bg-gray-600">
       <div className="w-80 rounded bg-gray-50 px-6 pt-4 shadow-lg">
         <img
-          src="src/assets/MARISON-LOGO.png"
+          src="./assets/MARISON-LOGO.png"
           alt="Marison Logo"
           className="mx-auto w-36 mt-8"
         />
@@ -16,7 +16,7 @@ const ReceiptCard: React.FC = () => {
         </div>
         <div className="flex flex-col gap-3 border-b py-6 text-xs">
           <p className="flex justify-between">
-            <span className="text-gray-500 font-mono">Receipt No.:</span>
+            <span className="text-gray-500 font-mono">Booking no.:</span>
             <span>#1128202400001</span>
           </p>
           <p className="flex justify-between">

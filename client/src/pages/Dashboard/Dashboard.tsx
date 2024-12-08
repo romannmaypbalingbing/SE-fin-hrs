@@ -1,17 +1,78 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CardDataStats from '../../components/CardDataStats';
 import ChartOne from '../../components/Charts/ChartOne';
 import ChartThree from '../../components/Charts/ChartThree';
 import ChartTwo from '../../components/Charts/ChartTwo';
 import ChatCard from '../../components/Chat/ChatCard';
-// import MapOne from '../../components/Maps/MapOne';
 import TableOne from '../../components/Tables/TableOne';
+import supabase from '../../supabaseClient';
 
 const Dashboard: React.FC = () => {
+  const [stats, setStats] = useState({
+    bookedRooms: 0,
+    availableRooms: 0,
+    checkIn: 0,
+    checkOut: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch total booked rooms
+        const { count: bookedRooms, error: bookedError } = await supabase
+          .from('booking')
+          .select('*', { count: 'exact' });
+          console.log(bookedRooms);
+
+        if (bookedError) throw bookedError;
+
+        // Fetch total available rooms by summing `roomtype_totalrooms`
+        const { data: roomData, error: roomError } = await supabase
+          .from('room_type')
+          .select('roomtype_totalrooms');
+
+        if (roomError) throw roomError;
+
+        const availableRooms = roomData
+          ? roomData.reduce((sum, room) => sum + (room.roomtype_totalrooms || 0), 0)
+          : 0;
+
+        // Fetch today's check-ins
+        const today = new Date().toISOString().split('T')[0];
+        const { count: checkInCount, error: checkInError } = await supabase
+          .from('reservation')
+          .select('*', { count: 'exact' })
+          .eq('check_in_date', today);
+
+        if (checkInError) throw checkInError;
+
+        // Fetch today's check-outs
+        const { count: checkOutCount, error: checkOutError } = await supabase
+          .from('booking')
+          .select('*', { count: 'exact' })
+          .eq('check_out_date', today);
+
+        if (checkOutError) throw checkOutError;
+
+        // Update state with fetched stats
+        setStats({
+          bookedRooms: bookedRooms || 0,
+          availableRooms,
+          checkIn: checkInCount || 0,
+          checkOut: checkOutCount || 0,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []); 
+  
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="Booked Rooms" total="51/70" rate="0.43%" levelUp>
+        <CardDataStats title="Booked Rooms" total={stats.bookedRooms.toString()} rate="0.43%" levelUp>
           <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 2048 2048">
             <path fill="#b6872d" d="M896 512v128H512V512zM512 896V768h384v128zm0 256v-128h256v128zM384 512v128H256V512zm0 256v128H256V768zm-128 384v-128h128v128zM128 128v1792h640v128H0V0h1115l549 549v219h-128V640h-512V128zm1024 91v293h293zm640 805h256v1024H896V1024h256V896h128v128h384V896h128zm128 896v-512h-896v512zm0-640v-128h-896v128z"></path>
           </svg>
