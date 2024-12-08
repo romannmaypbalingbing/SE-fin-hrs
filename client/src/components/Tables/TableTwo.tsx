@@ -1,60 +1,58 @@
-import { Room } from '../../types/room';
+import { useState, useEffect } from 'react';
+import supabase from '../../supabaseClient';
 import ProductOne from '../../images/product/product-01.png';
-import ProductTwo from '../../images/product/product-02.png';
-import ProductThree from '../../images/product/product-03.png';
-import ProductFour from '../../images/product/product-04.png';
 
-const productData: Room[] = [
-  {
-    image: ProductOne,
-    name: 'Apple Watch Series 7',
-    category: 'Electronics',
-    price: 296,
-    sold: 22,
-    profit: 45,
-  },
-  {
-    image: ProductTwo,
-    name: 'Macbook Pro M1',
-    category: 'Electronics',
-    price: 546,
-    sold: 12,
-    profit: 125,
-  },
-  {
-    image: ProductThree,
-    name: 'Dell Inspiron 15',
-    category: 'Electronics',
-    price: 443,
-    sold: 64,
-    profit: 247,
-  },
-  {
-    image: ProductFour,
-    name: 'HP Probook 450',
-    category: 'Electronics',
-    price: 499,
-    sold: 72,
-    profit: 103,
-  },
-];
+interface Room {
+  // image: string;
+  name: string;
+  type: string;
+  price: number;
+  status: string;
+  reservor: string;
+}
 
 const TableTwo = () => {
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRooms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('room')
+        .select('*');
+
+        if (error) {
+          throw new Error(error.message);
+        }
+        console.log(data);
+
+        setRooms(data as Room[]);
+
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+  console.log(rooms);
+
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="py-6 px-4 md:px-6 xl:px-7.5">
         <h4 className="text-xl font-semibold text-black dark:text-white">
-          Deluxe King
+          Rooms
         </h4>
       </div>
       <div className="text-xl font-semibold text-black dark:text-white">
-          <img src={ProductOne} alt="Product" />
+          {/* <img src={} alt="Product" /> */}
         </div>
 
-
+      
       <div className="grid grid-cols-6 border-t border-stroke py-4.5 px-4 dark:border-strokedark sm:grid-cols-8 md:px-6 2xl:px-7.5">
         <div className="col-span-3 flex items-center">
-          <p className="font-medium">Product Name</p>
+          <p className="font-medium">Image</p>
         </div>
         <div className="col-span-2 hidden items-center sm:flex">
           <p className="font-medium">Category</p>
@@ -69,40 +67,37 @@ const TableTwo = () => {
           <p className="font-medium">Profit</p>
         </div>
       </div>
-
-      {productData.map((product, key) => (
+      
+      
+      {rooms.map((room, index) => (
         <div
           className="grid grid-cols-6 border-t border-stroke py-4.5 px-4 dark:border-strokedark sm:grid-cols-8 md:px-6 2xl:px-7.5"
-          key={key}
+          key={index}
         >
-          <div className="col-span-3 flex items-center">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="h-12.5 w-15 rounded-md">
-                <img src={product.image} alt="Product" />
-              </div>
-              <p className="text-sm text-black dark:text-white">
-                {product.name}
-              </p>
+          <div className="col-span-2 flex items-center">
+            <div className="h-12.5 w-15 rounded-md">
+              <img src={ ProductOne} alt={room.name} className="h-full w-full object-cover" />
             </div>
           </div>
-          <div className="col-span-2 hidden items-center sm:flex">
-            <p className="text-sm text-black dark:text-white">
-              {product.category}
-            </p>
+          <div className="col-span-2 flex items-center">
+            <p className="text-sm text-black dark:text-white">{room.name}</p>
           </div>
           <div className="col-span-1 flex items-center">
-            <p className="text-sm text-black dark:text-white">
-              ${product.price}
-            </p>
+            <p className="text-sm text-black dark:text-white">{room.type}</p>
           </div>
           <div className="col-span-1 flex items-center">
-            <p className="text-sm text-black dark:text-white">{product.sold}</p>
+            <p className="text-sm text-black dark:text-white">${room.price}</p>
           </div>
           <div className="col-span-1 flex items-center">
-            <p className="text-sm text-meta-3">${product.profit}</p>
+            <p className="text-sm text-black dark:text-white">{room.status}</p>
+          </div>
+          <div className="col-span-1 flex items-center">
+            <p className="text-sm text-black dark:text-white">{room.reservor}</p>
           </div>
         </div>
       ))}
+
+      {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>
   );
 };

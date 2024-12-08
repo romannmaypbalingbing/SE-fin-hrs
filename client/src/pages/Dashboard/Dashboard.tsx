@@ -18,7 +18,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch total booked rooms
+        // Fetch number of booked rooms
         const { count: bookedRooms, error: bookedError } = await supabase
           .from('booking')
           .select('*', { count: 'exact' });
@@ -152,7 +152,7 @@ const Dashboard: React.FC = () => {
         {/*Departing Today*/}
         <div>
           <TableOne />
-          </div>
+          </div> 
 
       </div>
 
