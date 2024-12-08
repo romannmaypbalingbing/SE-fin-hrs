@@ -8,12 +8,8 @@ import TableOne from '../../components/Tables/TableOne';
 import supabase from '../../supabaseClient';
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState({
-    bookedRooms: 0,
-    availableRooms: 0,
-    checkIn: 0,
-    checkOut: 0,
-  });
+  const [bookedRooms, setBookedRooms] = useState<number>(0);
+  const [availableRooms, setAvailableRooms] = useState<number>(0);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -25,6 +21,7 @@ const Dashboard: React.FC = () => {
           console.log(bookedRooms);
 
         if (bookedError) throw bookedError;
+        setBookedRooms(bookedRooms ?? 0);
 
         // Fetch total available rooms by summing `roomtype_totalrooms`
         const { data: roomData, error: roomError } = await supabase
@@ -32,11 +29,13 @@ const Dashboard: React.FC = () => {
           .select('roomtype_totalrooms');
 
         if (roomError) throw roomError;
-
+        
         const availableRooms = roomData
           ? roomData.reduce((sum, room) => sum + (room.roomtype_totalrooms || 0), 0)
           : 0;
+        setAvailableRooms(availableRooms);
 
+        // Fetch today's check-ins
         // Fetch today's check-ins
         const today = new Date().toISOString().split('T')[0];
         const { count: checkInCount, error: checkInError } = await supabase
@@ -72,12 +71,13 @@ const Dashboard: React.FC = () => {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="Booked Rooms" total={stats.bookedRooms.toString()} rate="0.43%" levelUp>
+        <CardDataStats title="Booked Rooms" total={`${bookedRooms}/${availableRooms}`} rate="">
           <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 2048 2048">
             <path fill="#b6872d" d="M896 512v128H512V512zM512 896V768h384v128zm0 256v-128h256v128zM384 512v128H256V512zm0 256v128H256V768zm-128 384v-128h128v128zM128 128v1792h640v128H0V0h1115l549 549v219h-128V640h-512V128zm1024 91v293h293zm640 805h256v1024H896V1024h256V896h128v128h384V896h128zm128 896v-512h-896v512zm0-640v-128h-896v128z"></path>
           </svg>
         </CardDataStats>
-        <CardDataStats title="Available Rooms" total="19/70" rate="4.35%" levelUp>
+        <CardDataStats title="Available Rooms" total={`${availableRooms - bookedRooms}/${availableRooms}`}
+ rate="4.35%" levelUp>
           <svg
             className="fill-primary dark:fill-white"
             width="20"

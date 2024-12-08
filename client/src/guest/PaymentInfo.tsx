@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import GuestNavBar from '../components/GuestNavBar';
 import Stepper from '../components/Stepper';
 import supabase from '../supabaseClient';
@@ -16,7 +16,8 @@ interface Guest{
         notesandRequests?: string;
     };
     shuttleService: boolean;
-    arrivalDateTime: string | null;
+    arrivalDate: string | null;
+    arrivalTime: string | null;
     
 }
 
@@ -29,7 +30,34 @@ interface Payment{
 }
 
 const GuestInfo = () => {
+    const [ paymentMethod, setPaymentMethod ] = useState<string>('Visa Card');
     const navigate = useNavigate();
+    const location = useLocation();
+    interface SelectedRoom {
+        room: {
+            roomtype_name: string;
+        };
+        quantity: number;
+    }
+    
+    const {res_id, selectedRooms, checkInDate, checkOutDate, stayDuration, subtotal, discount} = 
+        location.state as { 
+            res_id: string,
+            selectedRooms: SelectedRoom[], 
+            checkInDate: string, 
+            checkOutDate: string, 
+            stayDuration: number, 
+            subtotal: number, 
+            discount: number } || {};
+
+    const formatDate = (dateString: string): string => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    
+    const calculateTotalCost = () => {
+        return (subtotal * (1 - discount)).toFixed(2);
+    }
     
     const [guests, setGuests] = useState<Guest[]>([
         {
@@ -43,7 +71,8 @@ const GuestInfo = () => {
                 country: '',
             },
             shuttleService: false,
-            arrivalDateTime: null, 
+            arrivalDate: null, 
+            arrivalTime: null
             },
     ]);
 
@@ -54,6 +83,10 @@ const GuestInfo = () => {
         expDateYear: '',
         securityCode: '',
     });
+
+    const handlePaymentMethodChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+        setPaymentMethod(evt.target.id);
+    };
 
     const handlePaymentChange = (evt: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = evt.target;
@@ -82,7 +115,8 @@ const GuestInfo = () => {
                 address: '', 
                 country: '' 
             },
-            arrivalDateTime: null, 
+            arrivalDate: null,
+            arrivalTime: null,
             shuttleService: false
         };
         setGuests([...guests, newGuest]);
@@ -99,29 +133,59 @@ const GuestInfo = () => {
     const handleArrivalDateTimeChange = (evt: React.ChangeEvent<HTMLInputElement>) => { 
         setArrivalDateTime(evt.target.value);
   };
-
   const submitGuestInfo = async () => {
     try {
-        const { data: guestData, error: guestError } = await supabase
+        const guestInsertPromises = guests.map((guest) => { return supabase
             .from('guests_info')
-            .insert(
-                guests.map(guest => ({
+            .insert([
+                {
                     guest_firstname: guest.formData.firstName,
                     guest_lastname: guest.formData.lastName,
                     guest_email: guest.formData.email,
                     guest_contactno: guest.formData.contactNumber,
                     guest_address: guest.formData.address,
                     guest_country: guest.formData.country,
-                    guest_requests: guest.formData.notesandRequests,
-                })
-            ))
-            if (guestError) {
-                console.error('Error inserting guest data:', guestError);
-                alert('Error inserting guest data. Please try again later.');
-                return;
-            }
-            console.log('Guest data inserted:', guestData);
+                    guest_requests: guest.formData.notesandRequests || '',
+                },
+            ]);
+        });
 
+        const guestInsertResults = await Promise.all(guestInsertPromises);
+
+        for (const result of guestInsertResults) {
+            if (result.error) {
+              console.error('Error inserting a guest:', result.error);
+              alert('Error inserting guest information.');
+              return;
+            }
+        }
+
+        console.log('Guest data inserted:', guestInsertResults);
+
+        // Insert shuttle service data
+        const shuttleServiceData = guests.filter((guest) => guest.shuttleService).map((guest) => {
+            return {
+                shuttleService : guest.shuttleService,
+                arrival_date: guest.arrivalDate,
+                arrival_time: guest.arrivalTime,
+            };
+        });
+        try {
+            const { data, error } = await supabase
+              .from('reservation')
+              .insert(shuttleServiceData);
+          
+            if (error) {
+              console.error('Error inserting shuttle service data:', error);
+            } else {
+              console.log('Successfully inserted shuttle service data:', data);
+            }
+          } catch (error) {
+            console.error('Unexpected error while inserting data:', error);
+          }
+
+
+        // Insert payment data
             const { data: paymentData, error: paymentError } = await supabase
                 .from('payment')
                 .insert([
@@ -131,8 +195,10 @@ const GuestInfo = () => {
                         exp_date_month: payment.expDateMonth,
                         exp_date_year: payment.expDateYear,
                         sec_Code: payment.securityCode,
+                        payment_method: paymentMethod,
                     },
                 ]);
+
             if (paymentError) {
                 console.error('Error inserting payment data:', paymentError);
                 alert('Error inserting payment data. Please try again later.');
@@ -140,9 +206,13 @@ const GuestInfo = () => {
             }
 
             console.log('Payment data inserted:', paymentData);
-
+            const Guest = guests[0];
+            const reservor =  `${Guest.formData.firstName} ${Guest.formData.lastName}`;
             alert('Payment and guest information submitted');
-            navigate('/guest/receipt')
+            navigate('/guest/receipt', {
+                state: {res_id, selectedRooms, checkInDate, checkOutDate, stayDuration, subtotal, discount, reservor},
+            }
+            )
             
     } catch (error) {
         console.error('Error inserting guest data:', error);
@@ -403,17 +473,59 @@ const GuestInfo = () => {
                         </div>
                     </div>
 
-                    {/* summary */}
+                    
                     <div className="col-span-1 grid grid-col-2 gap-4 ml-4"> {/* Grid layout with 2 columns */}
-                        <div className="flex flex-col bg-white p-6 shadow-md rounded-lg">
-                            <label htmlFor="hotelName" className="block text-lg font-medium text-slate-500 text-left">
-                                Your Reservations
-                            </label>
-                            <div className="grid grid-cols-2 justify-between mt-4">
-                                <p className="text-slate-500 text-left">Check In</p>
-                                <p className="text-slate-500 text-left">Check Out</p>
+                    
+                        {/* summary */}
+                        <div className="bg-white p-6 shadow-lg rounded-lg w-full">
+                            {/* Booking Details */}
+                            <h2 className="text-xl font-semibold text-red-800 mb-4">Your booking details</h2>
+                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                {/* Check-In */}
+                                <div>
+                                <p className="font-medium text-gray-700">Check-in</p>
+                                <p>{formatDate(checkInDate)}</p>
+                                
+                                </div>
+                                {/* Check-Out */}
+                                <div>
+                                <p className="font-medium text-gray-700">Check-out</p>
+                                <p>{formatDate(checkOutDate)}</p>
+                                
+                                </div>
+                            </div>
+
+                            {/* Length of Stay */}
+                            <p className="text-sm text-gray-600 mt-4">
+                                <span className="font-medium text-gray-700">Total length of stay:</span> {stayDuration} nights
+                            </p>
+
+                            <hr className="my-4 border-gray-300" />
+
+                            {/* Selected Rooms */}
+                            <h3 className="text-lg font-semibold text-gray-700">Selected rooms</h3>
+                            <p className="text-sm text-gray-600">{selectedRooms.length} rooms</p>
+                            <ul className="mt-2 text-sm text-gray-700">
+                                {selectedRooms.map(({ room, quantity }, index) => (
+                                <li key={index}>
+                                    {quantity} x {room.roomtype_name}
+                                </li>
+                                ))}
+                            </ul> 
+
+                            <hr className="my-4 border-gray-300" />
+
+                            {/* Price Summary */}
+                            <div className="flex justify-between text-lg text-gray-600">
+                                <p>Total Cost</p>
+                                <p className="font-medium font-bold text-gray-700">PHP {calculateTotalCost()}</p>
                             </div>
                         </div>
+        
+                        
+                        {/* ))} */}
+                        
+                    
 
                         {/* payment */}
                         <div className="flex flex-col bg-white p-6 shadow-md rounded-lg">
@@ -424,13 +536,13 @@ const GuestInfo = () => {
                                 <div className="mb-3 flex -mx-2">
                                     <div className="px-2">
                                         <label htmlFor="type1" className="flex items-center cursor-pointer">
-                                            <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type1" defaultChecked />
+                                            <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type1" defaultChecked onChange={handlePaymentMethodChange}/>
                                             <img src="https://leadershipmemphis.org/wp-content/uploads/2020/08/780370.png" className="h-8 ml-3" alt="Card 1" />
                                         </label>
                                     </div>
                                     <div className="px-2">
                                         <label htmlFor="type2" className="flex items-center cursor-pointer">
-                                            <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type2" />
+                                            <input type="radio" className="form-radio h-5 w-5 text-indigo-500" name="type" id="type2" onChange={handlePaymentMethodChange} />
                                             <img src="https://www.sketchappsources.com/resources/source-image/PayPalCard.png" className="h-8 ml-3" alt="Card 2" />
                                         </label>
                                     </div>

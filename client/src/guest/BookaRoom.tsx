@@ -34,7 +34,6 @@ const BookaRoom: React.FC = () => {
     const [couponCode, setCouponCode] = useState<string>('');
     const [discount, setDiscount] = useState<number>(0);
     
-
     //get the checkInDate and checkOutDate from the location state
     useEffect(() => {
         if(location.state){
@@ -68,6 +67,8 @@ const BookaRoom: React.FC = () => {
 
         fetchRoomDetails();
     }, []);
+
+    
 
     // const handleShowMore = () => {
     // }
@@ -141,8 +142,6 @@ const BookaRoom: React.FC = () => {
         });
     };
 
-    
-    
       const calculateSubtotal = () => {
         return selectedRooms.reduce(
           (total, selectedRoom) =>
@@ -237,7 +236,7 @@ const BookaRoom: React.FC = () => {
                 }
                     
                 navigate('/guest/payment-info', {
-                    state: { selectedRooms, stayDuration, subtotal: calculateSubtotal(), discount },
+                    state: { res_id, selectedRooms, checkInDate, checkOutDate, stayDuration, subtotal: calculateSubtotal(), discount },
                   });
 
             } catch (error) {
