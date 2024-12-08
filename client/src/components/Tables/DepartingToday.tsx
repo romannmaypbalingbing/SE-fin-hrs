@@ -9,7 +9,7 @@ interface Reservation {
   checkout: string;
 }
 
-const TableOne = () => {
+const DepartingToday = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const TableOne = () => {
             room_id,
             reservor_name
           `)
-          .match({ check_in_date: today }); // Match using the actual database column name
+          .match({ check_out_date: today }); // Match using the actual database column name
   
         if (error) {
           console.error('Error fetching reservation data:', error);
@@ -51,13 +51,13 @@ const TableOne = () => {
     fetchReservations();
   }, []);
 
-  // console.log(checkin);
+  console.log(reservations);
   
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-        Arriving Today
+        Departing Today
       </h4>
 
       <div className="flex flex-col">
@@ -116,4 +116,4 @@ const TableOne = () => {
   );
 };
 
-export default TableOne;
+export default DepartingToday;

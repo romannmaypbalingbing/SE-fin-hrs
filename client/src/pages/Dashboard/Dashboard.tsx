@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import CardDataStats from '../../components/CardDataStats';
-import ChartOne from '../../components/Charts/ChartOne';
-import ChartThree from '../../components/Charts/ChartThree';
-import ChartTwo from '../../components/Charts/ChartTwo';
-import ChatCard from '../../components/Chat/ChatCard';
 import TableOne from '../../components/Tables/TableOne';
 import supabase from '../../supabaseClient';
+import DepartingToday from '../../components/Tables/DepartingToday';
 
 const Dashboard: React.FC = () => {
   const [bookedRooms, setBookedRooms] = useState<number>(0);
   const [availableRooms, setAvailableRooms] = useState<number>(0);
+  const [checkInCount, setCheckInCount] = useState<number>(0);
+  const [checkOutCount, setCheckOutCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
+
         // Fetch number of booked rooms
         const { count: bookedRooms, error: bookedError } = await supabase
           .from('booking')
@@ -36,30 +36,24 @@ const Dashboard: React.FC = () => {
         setAvailableRooms(availableRooms);
 
         // Fetch today's check-ins
-        // Fetch today's check-ins
         const today = new Date().toISOString().split('T')[0];
+        console.log(today)
         const { count: checkInCount, error: checkInError } = await supabase
           .from('reservation')
           .select('*', { count: 'exact' })
           .eq('check_in_date', today);
-
+        
         if (checkInError) throw checkInError;
-
+        setCheckInCount(checkInCount || 0);
         // Fetch today's check-outs
         const { count: checkOutCount, error: checkOutError } = await supabase
-          .from('booking')
+          .from('reservation')
           .select('*', { count: 'exact' })
           .eq('check_out_date', today);
 
         if (checkOutError) throw checkOutError;
-
-        // Update state with fetched stats
-        setStats({
-          bookedRooms: bookedRooms || 0,
-          availableRooms,
-          checkIn: checkInCount || 0,
-          checkOut: checkOutCount || 0,
-        });
+        setCheckOutCount(checkOutCount || 0);
+        
       } catch (error) {
         console.error('Error fetching stats:', error);
       }
@@ -67,6 +61,7 @@ const Dashboard: React.FC = () => {
 
     fetchStats();
   }, []); 
+  console.log(bookedRooms, availableRooms, checkInCount, checkOutCount);
   
   return (
     <>
@@ -76,8 +71,7 @@ const Dashboard: React.FC = () => {
             <path fill="#b6872d" d="M896 512v128H512V512zM512 896V768h384v128zm0 256v-128h256v128zM384 512v128H256V512zm0 256v128H256V768zm-128 384v-128h128v128zM128 128v1792h640v128H0V0h1115l549 549v219h-128V640h-512V128zm1024 91v293h293zm640 805h256v1024H896V1024h256V896h128v128h384V896h128zm128 896v-512h-896v512zm0-640v-128h-896v128z"></path>
           </svg>
         </CardDataStats>
-        <CardDataStats title="Available Rooms" total={`${availableRooms - bookedRooms}/${availableRooms}`}
- rate="4.35%" levelUp>
+        <CardDataStats title="Available Rooms" total={`${availableRooms - bookedRooms}/${availableRooms}`} rate="">
           <svg
             className="fill-primary dark:fill-white"
             width="20"
@@ -100,7 +94,7 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="Check-In" total="17" rate="2.59%" levelUp>
+        <CardDataStats title="Check-In" total={checkInCount.toString()} rate="">
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -119,7 +113,7 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="Check-Out" total="12" rate="0.95%" levelDown>
+        <CardDataStats title="Check-Out" total={checkOutCount.toString()} rate="">
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -151,20 +145,8 @@ const Dashboard: React.FC = () => {
         </div>
         {/*Departing Today*/}
         <div>
-          <TableOne />
+          <DepartingToday />
           </div> 
-
-      </div>
-
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        <ChartOne />
-        <ChartTwo />
-        <ChartThree />
-        
-        <div className="col-span-12 xl:col-span-8">
-          <TableOne />
-        </div>
-        <ChatCard />
       </div>
     </>
   );

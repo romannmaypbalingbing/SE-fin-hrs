@@ -34,62 +34,14 @@ const AddNewBooking = () => {
     couponCode: '',
   });
 
-  interface GuestDetails {
-    fullName: string;
-    email: string;
-    phoneNumber: string;
-    address: string;
-    country: string;
-    comment: string;
-  }
-
-  interface Extras {
-    breakfast: boolean;
-    lunch: boolean;
-    dinner: boolean;
-    spa: boolean;
-    laundry: boolean;
-    bikeRent: boolean;
-    carRent: boolean;
-    localGuide: boolean;
-  }
-
-  interface Payment {
-    paymentType: string;
-    bank: string;
-    cardNumber: string;
-  }
-
-  interface FormData {
-    checkIn: string;
-    duration: string;
-    checkOut: string;
-    roomType: string;
-    roomPlan: string;
-    roomNumber: string;
-    guestDetails: GuestDetails;
-    extras: Extras;
-    payment: Payment;
-    couponCode: string;
-  }
-
-  const handleInputChange = (section: keyof FormData, key: string, value: string | boolean) => {
-    setFormData((prev) => {
-      if (section === 'guestDetails' || section === 'extras' || section === 'payment') {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [key]: value,
-          },
-        };
-      } else {
-        return {
-          ...prev,
-          [section]: value,
-        };
-      }
-    });
+  const handleInputChange = (section, key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [key]: value,
+      },
+    }));
   };
 
   return (
@@ -114,18 +66,11 @@ const AddNewBooking = () => {
               <input type="date" className="input" placeholder="Check In" />
               <input type="number" className="input" placeholder="Duration (Nights)" />
               <input type="date" className="input" placeholder="Check Out" />
-              <select className="input">
-                <option value="deluxe">Deluxe King</option>
-                <option value="standard">Deluxe King Mayon View</option>
-                <option value="standard">Deluxe Twin</option>
-                <option value="standard">Deluxe Twin Mayon View</option>
-                <option value="standard">Family Suite</option>
-                <option value="standard">Marison Suite</option>
-                <option value="standard">Premiere Suite</option>
-                <option value="standard">Premiere Suite Queen</option>
-                <option value="standard">Specialty Deluxe</option>
+              <select className="input" placeholder="Room Type">
+                <option value="deluxe">Deluxe Suites</option>
+                <option value="standard">Standard Room</option>
               </select>
-              <select className="input">
+              <select className="input" placeholder="Room Plan">
                 <option value="extra">Extra Bed</option>
               </select>
               <input type="text" className="input" placeholder="Room #" />
@@ -163,8 +108,8 @@ const AddNewBooking = () => {
             <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
             <div className="grid grid-cols-3 gap-4">
               <select className="input">
-                <option value="debit">Visa Card</option>
-                <option value="credit">PayPal</option>
+                <option value="debit">Debit Card</option>
+                <option value="credit">Credit Card</option>
               </select>
               <input type="text" className="input" placeholder="Bank" />
               <input type="text" className="input" placeholder="Card Number" />
@@ -176,16 +121,16 @@ const AddNewBooking = () => {
         <div className="col-span-1 bg-gray-50 p-4 rounded-md shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Booking Summary</h2>
           <div className="space-y-2">
-            <p>Room Total: <span className="float-right">PHP</span></p>
-            <p>Extras: <span className="float-right">PHP</span></p>
-            <p>Discount: <span className="float-right">- PHP</span></p>
-            <p className="font-semibold">Total: <span className="float-right text-red-500">PHP</span></p>
+            <p>Room Total: <span className="float-right">$1100</span></p>
+            <p>Extras: <span className="float-right">$50</span></p>
+            <p>Discount: <span className="float-right">- $80</span></p>
+            <p className="font-semibold">Total: <span className="float-right text-red-500">$1100</span></p>
           </div>
           <div className="mt-4">
-            <input type="text" className="input mb-2 bg-slate-200 w-full py-1.5 px-2" placeholder="Coupon Code" />
-            <button className=" py-2 btn-primary w-1/2 mt-2 bg-black text-white rounded-sm">Apply</button>
+            <input type="text" className="input" placeholder="Coupon Code" />
+            <button className="btn-primary w-full mt-2">Apply</button>
           </div>
-          <button className="py-2 btn-primary w-full mt-6 bg-red-800 text-white rounded-sm">Book Room</button>
+          <button className="btn-primary w-full mt-6">Book Room</button>
         </div>
       </div>
     </div>
