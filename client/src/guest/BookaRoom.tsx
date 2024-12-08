@@ -12,6 +12,11 @@ interface RoomDetails{
     roomtype_totalrooms: number;
 }
 
+interface SelectedRoom {
+    room: RoomDetails;
+    quantity: number;
+  }
+
 interface ReservationState {
     checkInDate: string;
     checkOutDate: string;
@@ -24,10 +29,13 @@ const BookaRoom: React.FC = () => {
     const [checkInDate, setCheckInDate] = useState<string>('');
     const [checkOutDate, setCheckOutDate] = useState<string>('');
     const [roomDetailsList, setRoomDetailsList] = useState<RoomDetails[]>([]);
-    const [selectedRoom, setSelectedRoom] = useState<RoomDetails | null>(null);
+    const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>([]);
     const [stayDuration, setStayDuration] = useState<number>(0);
+    const [couponCode, setCouponCode] = useState<string>('');
+    const [discount, setDiscount] = useState<number>(0);
     
 
+    //get the checkInDate and checkOutDate from the location state
     useEffect(() => {
         if(location.state){
             const {checkInDate, checkOutDate} = location.state as ReservationState;
@@ -36,7 +44,7 @@ const BookaRoom: React.FC = () => {
         }
     }, [location.state]);
 
-    //fetch room details to display data from the database
+    // get room type details
     useEffect(() => {
         const fetchRoomDetails = async () => {
             try {
@@ -63,6 +71,11 @@ const BookaRoom: React.FC = () => {
 
     // const handleShowMore = () => {
     // }
+    useEffect(() => {
+        if (checkInDate && checkOutDate) {
+            computeStayDuration(checkInDate, checkOutDate);
+        }
+    }, [checkInDate, checkOutDate]);
 
     //computeStayDuration function to compute the duration of stay
     const computeStayDuration = (checkInDateStr: string, checkOutDateStr: string) => {
@@ -76,27 +89,166 @@ const BookaRoom: React.FC = () => {
             console.error('Error computing stay duration:', error);
         }
     };
+    const handleAddRoom = (room: RoomDetails) => {
+        setSelectedRooms((prevRooms) => {
+            const existingRoom = prevRooms.find((r) => r.room.roomtype_id === room.roomtype_id);
 
-        useEffect(() => {
-            if (checkInDate && checkOutDate) {
-                computeStayDuration(checkInDate, checkOutDate);
+            if (existingRoom) {
+                return prevRooms.map((r) =>
+                  r.room.roomtype_id === room.roomtype_id
+                    ? { ...r, quantity: r.quantity + 1 }
+                    : r
+                );
             }
-        }, [checkInDate, checkOutDate]);
+            return [...prevRooms, { room, quantity: 1 }];
+        }
+        );
+    };
+
+    const handleRemoveRoom = (room: RoomDetails) => {
+        setSelectedRooms((prevRooms) => {
+          const existingRoom = prevRooms.find((r) => r.room.roomtype_id === room.roomtype_id);
+    
+          if (existingRoom && existingRoom.quantity > 1) {
+            return prevRooms.map((r) =>
+              r.room.roomtype_id === room.roomtype_id
+                ? { ...r, quantity: r.quantity - 1 }
+                : r
+            );
+          }
+    
+          return prevRooms.filter((r) => r.room.roomtype_id !== room.roomtype_id);
+        });
+      };
+        
         
     //handleBookNow function to handle the selected room and display to summary
     const handleBookNow = (room: RoomDetails) => {
-        setSelectedRoom(room);
-        computeStayDuration(checkInDate, checkOutDate);
+        setSelectedRooms((prevRooms) => {
+            const existingRoom = prevRooms.find((r) => r.room.roomtype_id === room.roomtype_id);
+    
+            if (existingRoom) {
+                // Increment quantity if room already selected
+                return prevRooms.map((r) =>
+                    r.room.roomtype_id === room.roomtype_id
+                        ? { ...r, quantity: r.quantity + 1 }
+                        : r
+                );
+            }
+    
+            // Add new room type to the selected rooms list
+            return [...prevRooms, { room, quantity: 1 }];
+        });
     };
 
-    // Proceed to payment
-    const handleProceedToPayment = () => {
-        if (selectedRoom) {
-            navigate('/guest/payment-info');
+    
+    
+      const calculateSubtotal = () => {
+        return selectedRooms.reduce(
+          (total, selectedRoom) =>
+            total + selectedRoom.room.roomtype_price * selectedRoom.quantity * stayDuration,
+          0
+        );
+      };
+    
+      const handleApplyCoupon = () => {
+        if (couponCode === 'DISCOUNT10') {
+          setDiscount(0.1); // 10% discount
         } else {
-            alert('Please select a room to proceed to payment.');
+          alert('Invalid coupon code.');
+          setDiscount(0);
         }
-    };
+      };
+
+    // Proceed to payment
+    const handleProceedToPayment = async () => {
+        if (selectedRooms.length > 0) {
+            try {
+                const { res_id } = location.state || {};
+
+                if(!res_id){
+                    throw new Error('Reservation ID not found.');
+                    return;
+                }
+                console.log('Reservation ID:', res_id);
+                
+                const resCost = calculateSubtotal() * (1 - discount);
+                //insert total cost to the reservation table
+                const { error: errorInsertCost } = await supabase
+                    .from('reservation')
+                    .update({ res_cost: resCost })
+                    .match({ res_id });
+
+                if (errorInsertCost) {
+                    throw new Error('Error inserting total cost into database.');
+                }
+
+                //room conflicts
+                for(const selectedRoom of selectedRooms){
+                    const { room } = selectedRoom;
+
+                    //check if room_id is already reserved
+                    const { data: reservedRooms, error: reservedError } = await supabase
+                        .from('reserved_room')
+                        .select('room_id')
+                        .eq('room_id', room.roomtype_id);
+
+                    if (reservedError) {
+                        console.error('Error checking reserved rooms:', reservedError);
+                        continue;
+                    }
+
+                    let roomToInsertId = room.roomtype_id;
+                    
+                    if(reservedRooms.length > 0){
+                        //if reserved, find another room of same type
+                        const { data: availableRooms, error: availableError } = await supabase
+                            .from('room')
+                            .select('room_id')
+                            .eq('room_status', 'available')
+                            .eq('roomtype_id', room.roomtype_id);
+                        
+                        if (availableError) {
+                            console.error('Error checking available rooms:', availableError);
+                            continue;
+                        }
+
+                        if(availableRooms.length > 0){
+                            roomToInsertId = availableRooms[0].room_id;
+                        } else {
+                            alert('No available rooms of the same type.');
+                            continue;
+                        }
+                    }
+
+                    //insert selected rooms to the reservation room table
+                    const { error: insertError } = await supabase
+                        .from('reserved_room')
+                        .insert(
+                            {
+                                res_id,
+                                room_id: roomToInsertId,
+                            });
+
+                    if (insertError) {
+                        console.error('Error inserting rooms into database:', insertError);
+                        alert('An error occurred. Please try again.');
+                    }
+                }
+                    
+                navigate('/guest/payment-info', {
+                    state: { selectedRooms, stayDuration, subtotal: calculateSubtotal(), discount },
+                  });
+
+            } catch (error) {
+                console.error('Error inserting rooms into database:', error);
+                alert('An error occurred. Please try again.');
+            }
+          } else {
+            alert('Please select at least one room to proceed to payment.');
+          }
+          
+        };
 
     return (
         <div className="bg-slate-100 w-full"> {/* Set background to slate-100 */}
@@ -226,14 +378,15 @@ const BookaRoom: React.FC = () => {
                  <div className="bg-white p-4 shadow-md rounded-lg h-full self-start">
                     <h2 className="text-xl font-semibold text-slate-800 mb-2 mt-3 px-2">Selected Rooms</h2>
                     <div className="flex flex-col gap-4">
-                        <div className="bg-slate-50 p-5 shadow-md rounded-lg">
+                        {selectedRooms.map(({ room, quantity}) => (
+                        <div key={room.roomtype_id} className="bg-slate-50 p-5 shadow-md rounded-lg">
                             {/* Summary details */}
                             <div className="data py-2 border-gray-200">
                                 <div className="flex justify-between items-start gap-4 ">
                                     {/* Room Type Name */}
                                     <div className="flex flex-col">
                                         <p className="font-medium text-medium leading-8 text-slate-700 text-left">
-                                            {selectedRoom?.roomtype_name}
+                                            {room.roomtype_name}
                                         </p>
                                         {/* Number of Nights */}
                                         <p className="text-sm text-gray-500">
@@ -242,11 +395,27 @@ const BookaRoom: React.FC = () => {
                                     </div>
                                     {/* Price */}
                                     <p className="text-2xl font-semibold text-slate-800">
-                                        PHP {selectedRoom?.roomtype_price}
+                                        PHP {room.roomtype_price * quantity * stayDuration}
                                     </p>
+                                </div>
+                                <div className="flex gap-2 mt-2">
+                                    <button
+                                        onClick={() => handleRemoveRoom(room)}
+                                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                    >
+                                        -
+                                    </button>
+                                        <span>{quantity}</span>
+                                    <button
+                                    onClick={() => handleAddRoom(room)}
+                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                    >
+                                    +
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                        ))}
                         
                         <h2
                             className="font-manrope font-semibold text-m leading-10 text-slate-700 pb-2 border-b border-gray-200 ">
@@ -254,21 +423,30 @@ const BookaRoom: React.FC = () => {
                         </h2>
                         <div className="data border-b border-gray-200">
                             <div className="flex items-center justify-between gap-4 mb-2">
-                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700">Product Cost</p>
-                                <p className="font-medium text-lg leading-8 text-gray-900">$360.00</p>
+                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700">Subtotal</p>
+                                <p className="font-medium text-lg leading-8 text-gray-900">PHP {calculateSubtotal()}</p>
                             </div>
                             <div className="flex items-center justify-between gap-4 mb-2">
-                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700">Shipping</p>
-                                <p className="font-medium text-lg leading-8 text-gray-600">$40.00</p>
+                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700">Discount</p>
+                                <p className="font-medium text-lg leading-8 text-gray-600">- PHP {(calculateSubtotal() * discount).toFixed(2)}</p>
                             </div>
-                            <div className="flex items-center justify-between gap-2 ">
-                                <p className="font-normal text-lg leading-8 text-gray-400 transition-all duration-500 group-hover:text-gray-700 ">Coupon Code</p>
-                                <p className="font-medium text-lg leading-8 text-emerald-500">#APPLIED</p>
-                            </div>
+                            <input 
+                                type="text"
+                                placeholder="Enter coupon code"
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value)}
+                                className="mt-4 w-full px-4 py-2 border rounded"
+                              />
+                              <button
+                                onClick={handleApplyCoupon}
+                                className="mt-2 px-4 py-2 bg-gray-800 text-white font-semibold rounded hover:bg-gray-900"
+                                >
+                                Apply Coupon
+                                </button>
                         </div>
                         <div className="total flex items-center justify-between pt-6">
-                            <p className="font-normal text-xl leading-8 text-black ">Subtotal</p>
-                            <h5 className="font-manrope font-bold text-2xl leading-9 text-black">$400.00</h5>
+                            <p className="font-normal text-xl leading-8 text-black ">Total</p>
+                            <h5 className="font-manrope font-bold text-2xl leading-9 text-black">PHP {(calculateSubtotal() * (1 - discount)).toFixed(2)}</h5>
                         </div>
                     
 

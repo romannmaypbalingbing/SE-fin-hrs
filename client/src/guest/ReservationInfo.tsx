@@ -74,15 +74,27 @@ const ReservationInfo: React.FC = () => {
         pax_adult: parseInt(paxAdult),
         pax_child: parseInt(paxChildren),
         user_id: user.id,
+        res_status: "pending",
+
       };
 
       const { data: reservationResult, error: saveError } = await supabase
         .from('reservation')
-        .insert(reservationData);
+        .insert([reservationData])
+        .select();
 
       if (saveError) {
         console.error('Error saving reservation:', saveError);
         alert('Error saving the reservation. Please try again.');
+        console.log(reservationData)
+        return;
+      }
+
+      //get res_id
+      const res_id = reservationResult?.[0]?.res_id;
+
+      if(!res_id) {
+        alert('Could not retrieve reservation ID.');
         return;
       }
 
@@ -90,6 +102,7 @@ const ReservationInfo: React.FC = () => {
       alert('Rooms are available!');
       navigate('/guest/book-room', {
         state: {
+            res_id,
             checkInDate,
             checkOutDate,
             paxAdult,

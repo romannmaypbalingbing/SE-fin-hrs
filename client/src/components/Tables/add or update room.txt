@@ -1,0 +1,153 @@
+import React, { useState } from 'react';
+
+const TableTwo = () => {
+  const [roomDetails, setRoomDetails] = useState({
+    price: 340,
+    reservationStatus: 'Not Reserved',
+    roomType: 'Deluxe',
+    roomNumber: '002',
+    roomStatus: 'Clean',
+    returnStatus: 'Ready',
+    foStatus: 'Vacant',
+    roomClass: 'Main',
+    capacity: '2-4 Guests',
+    bedType: 'King Size',
+    amenities: {
+      shower: true,
+      seaView: true,
+      internet: true,
+      luggage: false,
+      safeBox: false,
+      concierge: false,
+      airConditioner: false,
+      tvCable: false,
+      refrigerator: false,
+      morningSunlight: false,
+    },
+  });
+
+  const handleInputChange = (key: string, value: string | number) => {
+    setRoomDetails((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleAmenityToggle = (key: keyof typeof roomDetails.amenities) => {
+    setRoomDetails((prev) => ({
+      ...prev,
+      amenities: { ...prev.amenities, [key]: !prev.amenities[key] },
+    }));
+  };
+  
+
+  const handleSave = () => {
+    console.log('Updated Room Details:', roomDetails);
+    alert('Room details saved successfully!');
+  };
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <div className="bg-white p-6 rounded-md shadow-md">
+        <h1 className="text-2xl font-semibold mb-6">Room Edit - Deluxe No. {roomDetails.roomNumber}</h1>
+
+        {/* Room Pictures */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Room Pictures</h2>
+          <div className="flex space-x-4">
+            <div className="w-32 h-20 bg-gray-200 rounded-md flex items-center justify-center text-gray-600">
+              Main Image
+            </div>
+            <div className="w-32 h-20 bg-gray-200 rounded-md"></div>
+            <div className="w-32 h-20 bg-gray-200 rounded-md"></div>
+            <div className="w-32 h-20 bg-gray-200 rounded-md"></div>
+            <button className="w-32 h-20 bg-gray-100 border-dashed border-2 border-gray-300 rounded-md flex items-center justify-center text-gray-600">
+              + Add Image
+            </button>
+          </div>
+        </div>
+
+        {/* Room Details */}
+        <div className="grid grid-cols-2 gap-4 mt-8">
+          <div>
+            <label className="block text-sm font-medium mb-2">Room Price</label>
+            <input
+              type="number"
+              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              value={roomDetails.price}
+              onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Reservation Status</label>
+            <select
+              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              value={roomDetails.reservationStatus}
+              onChange={(e) => handleInputChange('reservationStatus', e.target.value)}
+            >
+              <option value="Not Reserved">Not Reserved</option>
+              <option value="Reserved">Reserved</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Room Type</label>
+            <select
+              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              value={roomDetails.roomType}
+              onChange={(e) => handleInputChange('roomType', e.target.value)}
+            >
+              <option value="Deluxe">Deluxe</option>
+              <option value="Standard">Standard</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Room Number</label>
+            <input
+              type="text"
+              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              value={roomDetails.roomNumber}
+              onChange={(e) => handleInputChange('roomNumber', e.target.value)}
+            />
+          </div>
+
+          {/* Add more fields for room details */}
+        </div>
+
+        {/* Room Amenities */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Room Amenities</h2>
+          <div className="grid grid-cols-3 gap-4">
+            {Object.entries(roomDetails.amenities).map(([amenity, isEnabled]) => (
+              <label key={amenity} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={isEnabled}
+                  // onChange={() => handleAmenityToggle(amenity)}
+                />
+                <span className="capitalize">{amenity}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Save/Close Buttons */}
+        <div className="mt-8 flex justify-end space-x-4">
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
+            onClick={() => alert('Changes discarded')}
+          >
+            Close
+          </button>
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded-md"
+            onClick={handleSave}
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TableTwo;
