@@ -1,5 +1,5 @@
 import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
-import TableTwo from '../components/Tables/TableTwo';
+import Rooms from '../components/Tables/Rooms';
 
 const Tables = () => {
   return (
@@ -7,7 +7,7 @@ const Tables = () => {
       <Breadcrumb pageName="Rooms" />
 
       <div className="flex flex-col gap-10">
-        <TableTwo />
+        <Rooms />
 
       </div>
     </>

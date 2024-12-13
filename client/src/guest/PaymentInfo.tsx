@@ -132,23 +132,32 @@ const GuestInfo = () => {
     const [arrivalDateTime, setArrivalDateTime] = useState<string | null>(null);
     const handleArrivalDateTimeChange = (evt: React.ChangeEvent<HTMLInputElement>) => { 
         setArrivalDateTime(evt.target.value);
-  };
-  const submitGuestInfo = async () => {
-    try {
-        const guestInsertPromises = guests.map((guest) => { return supabase
-            .from('guests_info')
-            .insert([
-                {
-                    guest_firstname: guest.formData.firstName,
-                    guest_lastname: guest.formData.lastName,
-                    guest_email: guest.formData.email,
-                    guest_contactno: guest.formData.contactNumber,
-                    guest_address: guest.formData.address,
-                    guest_country: guest.formData.country,
-                    guest_requests: guest.formData.notesandRequests || '',
-                },
-            ]);
-        });
+    };
+
+    const submitGuestInfo = async () => {
+        try {
+            //ensure guests array has at least one guest
+            if (guests.length === 0) {
+                alert('Please provide guest information.');
+                return;
+            }
+            
+            const guestInsertPromises = guests.map((guest, index) => { return supabase
+                .from('guests_info')
+                .insert([
+                    {
+                        guest_firstname: guest.formData.firstName,
+                        guest_lastname: guest.formData.lastName,
+                        guest_email: guest.formData.email,
+                        guest_contactno: guest.formData.contactNumber,
+                        guest_address: guest.formData.address,
+                        guest_country: guest.formData.country,
+                        guest_requests: guest.formData.notesandRequests || '',
+                        res_id: res_id,
+                        isReservor: index === 0,    //first guest information is the reservor
+                    },
+                ]);
+            });
 
         const guestInsertResults = await Promise.all(guestInsertPromises);
 
@@ -165,9 +174,9 @@ const GuestInfo = () => {
         // Insert shuttle service data
         const shuttleServiceData = guests.filter((guest) => guest.shuttleService).map((guest) => {
             return {
-                shuttleService : guest.shuttleService,
-                arrival_date: guest.arrivalDate,
-                arrival_time: guest.arrivalTime,
+                shuttle_service : guest.shuttleService,
+                shuttle_date: guest.arrivalDate,
+                shuttle_time: guest.arrivalTime,
             };
         });
         try {
@@ -214,11 +223,11 @@ const GuestInfo = () => {
             }
             )
             
-    } catch (error) {
-        console.error('Error inserting guest data:', error);
-        alert('Error inserting guest data. Please try again later.');
+        } catch (error) {
+            console.error('Error inserting guest data:', error);
+            alert('Error inserting guest data. Please try again later.');
+        }
     }
-  }
 
 
     const country = [

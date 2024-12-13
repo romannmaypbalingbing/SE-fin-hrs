@@ -27,28 +27,53 @@ const ReceiptCard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const insertBookingData = async () => {
-      const { data: bookingData, error: bookingError } = await supabase
-        .from("booking")
-        .insert([
-          {
-            res_id: res_id,
-            booking_status: "confirmed",
-          },
-        ])
-        .select("booking_id");
-
-      if (bookingError) {
-        console.error("Error inserting booking data:", bookingError);
-        setError("Failed to retrieve booking details.");
-      } else {
-        console.log("Booking data inserted successfully:", bookingData);
-        setBookingId(bookingData[0]?.booking_id || null);
+    const manageBookingData = async () => {
+      if (!res_id) {
+        setError("Reservation ID is required.");
+        return;
+      }
+  
+      try {
+        // Try fetching the booking first
+        const { data: existingBooking, error: fetchError } = await supabase
+          .from("booking")
+          .select("booking_id")
+          .eq("res_id", res_id)
+          .single();
+  
+        if (fetchError) {
+          console.error("Error fetching booking:", fetchError.message);
+        }
+  
+        if (existingBooking) {
+          console.log("Existing booking found:", existingBooking);
+          setBookingId(existingBooking.booking_id);
+        } else {
+          // If no booking exists, create one
+          const { data: newBooking, error: insertError } = await supabase
+            .from("booking")
+            .insert([{ res_id, booking_status: "confirmed" }])
+            .select("booking_id")
+            .single();
+  
+          if (insertError) {
+            console.error("Error inserting new booking:", insertError.message);
+            setError("Failed to create booking.");
+          } else {
+            console.log("New booking created:", newBooking);
+            setBookingId(newBooking.booking_id);
+          }
+        }
+      } catch (err) {
+        console.error("Unexpected error managing booking data:", err);
+        setError("An unexpected error occurred.");
       }
     };
-
-    insertBookingData();
+  
+    manageBookingData();
   }, [res_id]);
+  
+  
 
   console.log(res_id, selectedRooms, checkInDate, checkOutDate, stayDuration, subtotal, discount, reservor);
 
@@ -104,7 +129,7 @@ const ReceiptCard: React.FC = () => {
 </table>
 <div className="border-b border-dashed"></div>
           <div className="flex justify-between">
-            <span className="text-gray-500 font-mono ">Subtotal:</span>
+            <span className="text-gray-500 font-mono ">Total:</span>
             <span className="text-black text-lg font-bold">PHP {(subtotal-(subtotal*discount))}</span>
           </div>
 

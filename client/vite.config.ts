@@ -4,6 +4,9 @@ import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer'; 
 
 export default defineConfig({
+  server: {
+    open: '/signup',
+  },
   plugins: [react()],
   css: {
     postcss: {

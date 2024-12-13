@@ -11,7 +11,8 @@ const ReservationInfo: React.FC = () => {
     const [paxChildren, setPaxChildren] = useState('');
     const navigate = useNavigate();
 
-    const handleSearch = async () => {
+    
+const handleSearch = async () => {
   if (checkIn && checkOut && paxAdult && paxChildren) {
     try {
       console.log({ checkIn, checkOut, paxAdult, paxChildren });
@@ -26,14 +27,30 @@ const ReservationInfo: React.FC = () => {
   
       const user = data?.user;
      
-      const checkInDate = new Date(checkIn).toISOString();
-      const checkOutDate = new Date(checkOut).toISOString();
+      const checkInDate = new Date(checkIn).toISOString().split('T')[0];
+      const checkOutDate = new Date(checkOut).toISOString().split('T')[0];
 
+      // Ensure check-in is before check-out
+      if (new Date(checkIn) >= new Date(checkOut)) {
+        alert('Check-out date must be after check-in date.');
+        return;
+      }
+
+      //check for reserved rooms for the selected dates
       const { data: reservedRooms, error: reservationError } = await supabase
-        .from('reservation')
-        .select('room_id')
-        .lte('check_in_date', checkInDate)
-        .gte('check_out_date', checkOutDate);
+      .from('reserved_room')
+      .select(`
+        room_id,
+        reservation (
+          check_in_date,
+          check_out_date
+        )
+      `)
+      .filter('reservation.check_in_date', 'lte', checkOutDate)
+      .filter('reservation.check_out_date', 'gte', checkInDate);
+
+      console.log(reservedRooms)
+
 
       if (reservationError) {
         console.error('Error fetching reserved rooms:', reservationError);
@@ -41,8 +58,13 @@ const ReservationInfo: React.FC = () => {
         return;
       }
 
-      const reservedRoomIds = reservedRooms.map((room) => room.room_id);
+      if (reservedRooms.length === 0) {
+        // No reservations exist
+        alert('No reservations exist for the selected dates.');
+      }
 
+      // Fetch available rooms
+      const reservedRoomIds = reservedRooms.map((room) => room.room_id);
       let availableRoomsQuery = supabase
         .from('room')
         .select('*')
@@ -51,9 +73,9 @@ const ReservationInfo: React.FC = () => {
       if (reservedRoomIds.length > 0) {
         availableRoomsQuery = availableRoomsQuery.not('room_id', 'in', reservedRoomIds);
       }
+      console.log(availableRoomsQuery)
 
       const { data: availableRooms, error: roomError } = await availableRoomsQuery;
-
       if (roomError) {
         console.error('Error fetching available rooms:', roomError);
         alert('Error fetching available rooms. Please try again later.');
@@ -61,21 +83,25 @@ const ReservationInfo: React.FC = () => {
       }
 
       if (availableRooms.length === 0) {
-        alert('No available rooms found for the selected dates.');
+        if (reservedRooms.length > 0) {
+          // Reserved rooms exist but no available rooms
+          alert('All rooms are fully booked for the selected dates.');
+        } else {
+          // No reservations and no available rooms (edge case)
+          alert('No rooms are available, but no reservations were found. Please contact support.');
+        }
         return;
       }
 
+      // Proceed with reservation
       const selectedRoom = availableRooms[0];
-
       const reservationData = {
-        room_id: selectedRoom.room_id,
         check_in_date: checkInDate,
         check_out_date: checkOutDate,
         pax_adult: parseInt(paxAdult),
         pax_child: parseInt(paxChildren),
         user_id: user.id,
         res_status: "pending",
-
       };
 
       const { data: reservationResult, error: saveError } = await supabase

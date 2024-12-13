@@ -56,7 +56,7 @@ const BookaRoom: React.FC = () => {
                     console.error('Error fetching room details:', error);
                 } else if (data){
                     console.log('Fetched room details:', data);
-                    setRoomDetailsList(data as RoomDetails[]);  //set the data to the roomDetailsList
+                    setRoomDetailsList(data as RoomDetails[]);
                 } else {
                     console.error('No data returned.');
                 }
@@ -68,10 +68,9 @@ const BookaRoom: React.FC = () => {
         fetchRoomDetails();
     }, []);
 
-    
-
     // const handleShowMore = () => {
     // }
+
     useEffect(() => {
         if (checkInDate && checkOutDate) {
             computeStayDuration(checkInDate, checkOutDate);
@@ -90,6 +89,7 @@ const BookaRoom: React.FC = () => {
             console.error('Error computing stay duration:', error);
         }
     };
+    
     const handleAddRoom = (room: RoomDetails) => {
         setSelectedRooms((prevRooms) => {
             const existingRoom = prevRooms.find((r) => r.room.roomtype_id === room.roomtype_id);
@@ -142,112 +142,133 @@ const BookaRoom: React.FC = () => {
         });
     };
 
-      const calculateSubtotal = () => {
+    const calculateSubtotal = () => {
         return selectedRooms.reduce(
-          (total, selectedRoom) =>
+            (total, selectedRoom) =>
             total + selectedRoom.room.roomtype_price * selectedRoom.quantity * stayDuration,
-          0
+            0
         );
-      };
+    };
     
-      const handleApplyCoupon = () => {
-        if (couponCode === 'DISCOUNT10') {
-          setDiscount(0.1); // 10% discount
-        } else {
-          alert('Invalid coupon code.');
-          setDiscount(0);
+      const handleApplyCoupon = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('discount')
+                .select('discount_code, discount_value')
+                .eq('discount_code', couponCode)
+                .single();
+
+            const coupon = data;
+            
+            if(error){
+                console.error('Error fetching coupon:', error);
+                return;
+            }
+
+            if (coupon) {
+                setDiscount(coupon.discount_value);
+            }
+        } catch (error) {
+            console.error('Error applying coupon:', error);
         }
-      };
+    };
 
     // Proceed to payment
     const handleProceedToPayment = async () => {
         if (selectedRooms.length > 0) {
             try {
                 const { res_id } = location.state || {};
-
-                if(!res_id){
+    
+                if (!res_id) {
                     throw new Error('Reservation ID not found.');
-                    return;
                 }
+    
                 console.log('Reservation ID:', res_id);
-                
+    
                 const resCost = calculateSubtotal() * (1 - discount);
-                //insert total cost to the reservation table
+    
+                // Insert total cost into reservation table
                 const { error: errorInsertCost } = await supabase
                     .from('reservation')
                     .update({ res_cost: resCost })
                     .match({ res_id });
-
+    
                 if (errorInsertCost) {
                     throw new Error('Error inserting total cost into database.');
                 }
-
-                //room conflicts
-                for(const selectedRoom of selectedRooms){
+    
+                for (const selectedRoom of selectedRooms) {
                     const { room } = selectedRoom;
-
-                    //check if room_id is already reserved
-                    const { data: reservedRooms, error: reservedError } = await supabase
-                        .from('reserved_room')
+                    const numberToReserve = selectedRoom.quantity;
+                    let roomToInsertIds = [];
+    
+                    // Fetch the required number of available distinct room IDs
+                    const { data: availableRooms, error: availableError } = await supabase
+                        .from('room')
                         .select('room_id')
-                        .eq('room_id', room.roomtype_id);
-
-                    if (reservedError) {
-                        console.error('Error checking reserved rooms:', reservedError);
+                        .eq('room_status', 'available')
+                        .eq('roomtype_id', room.roomtype_id);
+    
+                    if (availableError) {
+                        console.error('Error checking available rooms:', availableError);
+                        alert('Failed to check availability.');
                         continue;
                     }
-
-                    let roomToInsertId = room.roomtype_id;
-                    
-                    if(reservedRooms.length > 0){
-                        //if reserved, find another room of same type
-                        const { data: availableRooms, error: availableError } = await supabase
-                            .from('room')
-                            .select('room_id')
-                            .eq('room_status', 'available')
-                            .eq('roomtype_id', room.roomtype_id);
-                        
-                        if (availableError) {
-                            console.error('Error checking available rooms:', availableError);
-                            continue;
-                        }
-
-                        if(availableRooms.length > 0){
-                            roomToInsertId = availableRooms[0].room_id;
-                        } else {
-                            alert('No available rooms of the same type.');
-                            continue;
-                        }
+    
+                    if (availableRooms.length < numberToReserve) {
+                        alert(`Not enough available rooms of type ${room.roomtype_id}.`);
+                        continue;
                     }
-
-                    //insert selected rooms to the reservation room table
-                    const { error: insertError } = await supabase
-                        .from('reserved_room')
-                        .insert(
-                            {
-                                res_id,
-                                room_id: roomToInsertId,
-                            });
-
-                    if (insertError) {
-                        console.error('Error inserting rooms into database:', insertError);
-                        alert('An error occurred. Please try again.');
+    
+                    // Take only the required number of unique available room IDs
+                    roomToInsertIds = availableRooms.slice(0, numberToReserve).map(r => r.room_id);
+    
+                    for (let i = 0; i < roomToInsertIds.length; i++) {
+                        const roomId = roomToInsertIds[i];
+    
+                        // Insert into reserved_room table
+                        const { error: insertError } = await supabase
+                            .from('reserved_room')
+                            .insert([
+                                {
+                                    res_id,
+                                    room_id: roomId,
+                                },
+                            ]);
+    
+                        if (insertError) {
+                            console.error('Error inserting into reserved_room:', insertError);
+                            alert('An error occurred while reserving a room.');
+                            continue;
+                        }
+    
+                        // Update room status to 'reserved'
+                        const { error: updateError } = await supabase
+                            .from('room')
+                            .update({ room_status: 'reserved' })
+                            .eq('room_id', roomId);
+    
+                        if (updateError) {
+                            console.error('Error updating room status:', updateError);
+                            alert('Failed to reserve the room.');
+                        }
                     }
                 }
-                    
+    
                 navigate('/guest/payment-info', {
                     state: { res_id, selectedRooms, checkInDate, checkOutDate, stayDuration, subtotal: calculateSubtotal(), discount },
-                  });
-
+                });
             } catch (error) {
-                console.error('Error inserting rooms into database:', error);
+                console.error('Error processing payment:', error);
                 alert('An error occurred. Please try again.');
             }
-          } else {
+        } else {
             alert('Please select at least one room to proceed to payment.');
-          }
-          
-        };
+        }
+    };
+    
+    
+    
 
     return (
         <div className="bg-slate-100 w-full"> {/* Set background to slate-100 */}
