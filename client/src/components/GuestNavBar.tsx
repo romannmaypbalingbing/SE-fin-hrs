@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-
+import marisonlogo from "../assets/MARISON-LOGO.png"
 
 const GuestNavBar = () => {
   const [isToggleOpen, setIsToggleOpen] = useState(false)
@@ -26,10 +26,9 @@ const GuestNavBar = () => {
               aria-label="Marison logo"
               aria-current="page"
               className="flex items-center gap-2 whitespace-nowrap py-3 text-lg focus:outline-none lg:flex-1"
-              href="javascript:void(0)"
             >
               <img
-                src="src/assets/MARISON-LOGO.png"
+                src={marisonlogo}
                 alt="Marison Hotel Logo"
                 className="h-12 w-auto"
               />

@@ -17,12 +17,11 @@ const handleSearch = async () => {
     try {
       console.log({ checkIn, checkOut, paxAdult, paxChildren });
 
+      //fetch user data if authenticated
       const { data, error: userDataError } = await supabase.auth.getUser();
   
       if (userDataError) {
         console.error('Error fetching user data:', userDataError);
-        alert('Error fetching user data.');
-        return;
       }
   
       const user = data?.user;
@@ -49,14 +48,14 @@ const handleSearch = async () => {
       .filter('reservation.check_in_date', 'lte', checkOutDate)
       .filter('reservation.check_out_date', 'gte', checkInDate);
 
-      console.log(reservedRooms)
-
 
       if (reservationError) {
         console.error('Error fetching reserved rooms:', reservationError);
         alert('Error fetching reserved rooms. Please try again later.');
         return;
       }
+
+      console.log('Reserved Rooms:', reservedRooms);
 
       if (reservedRooms.length === 0) {
         // No reservations exist
@@ -71,9 +70,12 @@ const handleSearch = async () => {
         .eq('room_status', 'available');
 
       if (reservedRoomIds.length > 0) {
-        availableRoomsQuery = availableRoomsQuery.not('room_id', 'in', reservedRoomIds);
+        const formattedIds = `(${reservedRoomIds.join(',')})`;
+        availableRoomsQuery = availableRoomsQuery.not('room_id', 'in', formattedIds);
       }
-      console.log(availableRoomsQuery)
+
+      console.log('Reserved Room IDs:', reservedRoomIds);
+      console.log('Reserved Room IDs:', availableRoomsQuery);
 
       const { data: availableRooms, error: roomError } = await availableRoomsQuery;
       if (roomError) {
@@ -100,10 +102,10 @@ const handleSearch = async () => {
         check_out_date: checkOutDate,
         pax_adult: parseInt(paxAdult),
         pax_child: parseInt(paxChildren),
-        user_id: user.id,
+        user_id: user?.id,
         res_status: "pending",
       };
-
+      console.log('Selected Room:', selectedRoom);
       const { data: reservationResult, error: saveError } = await supabase
         .from('reservation')
         .insert([reservationData])

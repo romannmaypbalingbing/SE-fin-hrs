@@ -199,6 +199,7 @@ const GuestInfo = () => {
                 .from('payment')
                 .insert([
                     {
+                        res_id: res_id,
                         card_name: payment.cardName,
                         card_number: payment.cardNumber,
                         exp_date_month: payment.expDateMonth,

@@ -1,195 +1,201 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import supabase from "../supabaseClient";
 
-const AddNewBooking = () => {
-  const [formData, setFormData] = useState({
-    checkIn: '',
-    duration: '',
-    checkOut: '',
-    roomType: '',
-    roomPlan: '',
-    roomNumber: '',
-    guestDetails: {
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-      address: '',
-      country: '',
-      comment: '',
-    },
-    extras: {
-      breakfast: false,
-      lunch: false,
-      dinner: false,
-      spa: false,
-      laundry: false,
-      bikeRent: false,
-      carRent: false,
-      localGuide: false,
-    },
-    payment: {
-      paymentType: '',
-      bank: '',
-      cardNumber: '',
-    },
-    couponCode: '',
+interface Booking {
+  id: string;
+  rooms: string[]; // Array of reserved room IDs
+  guest: string; // Guest full name
+  checkIn: string;
+  checkOut: string;
+  status: string; // Reservation status
+}
+
+const BookingTable: React.FC = () => {
+  const navigate = useNavigate();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filters, setFilters] = useState({
+    date: "",
+    guestName: "",
+    resStatus: "",
   });
 
-  interface GuestDetails {
-    fullName: string;
-    email: string;
-    phoneNumber: string;
-    address: string;
-    country: string;
-    comment: string;
-  }
+  const fetchBookings = async () => {
+    const { data: bookingData, error: bookingError } = await supabase.from("booking").select("res_id");
 
-  interface Extras {
-    breakfast: boolean;
-    lunch: boolean;
-    dinner: boolean;
-    spa: boolean;
-    laundry: boolean;
-    bikeRent: boolean;
-    carRent: boolean;
-    localGuide: boolean;
-  }
+    if (bookingError) {
+      console.error("Error fetching booking data:", bookingError);
+      return;
+    }
 
-  interface Payment {
-    paymentType: string;
-    bank: string;
-    cardNumber: string;
-  }
+    if (bookingData) {
+      const formattedBookings: Booking[] = [];
 
-  interface FormData {
-    checkIn: string;
-    duration: string;
-    checkOut: string;
-    roomType: string;
-    roomPlan: string;
-    roomNumber: string;
-    guestDetails: GuestDetails;
-    extras: Extras;
-    payment: Payment;
-    couponCode: string;
-  }
+      for (const booking of bookingData) {
+        const { res_id } = booking;
 
-  const handleInputChange = (section: keyof FormData, key: string, value: string | boolean) => {
-    setFormData((prev) => {
-      if (section === 'guestDetails' || section === 'extras' || section === 'payment') {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [key]: value,
-          },
-        };
-      } else {
-        return {
-          ...prev,
-          [section]: value,
-        };
+        // Fetch reservation details
+        const { data: reservationData, error: reservationError } = await supabase
+          .from("reservation")
+          .select("check_in_date, check_out_date, res_status")
+          .eq("res_id", res_id)
+          .single();
+
+        if (reservationError) {
+          console.error("Error fetching reservation data:", reservationError);
+          continue;
+        }
+
+        // Fetch reserved rooms
+        const { data: reservedRoomsData, error: reservedRoomsError } = await supabase
+          .from("reserved_room")
+          .select("room_id")
+          .eq("res_id", res_id);
+
+        if (reservedRoomsError) {
+          console.error("Error fetching reserved rooms data:", reservedRoomsError);
+          continue;
+        }
+
+        const rooms = reservedRoomsData?.map((room) => room.room_id) || ["Unknown"];
+
+        // Fetch guest details where isReservor = true
+        const { data: guestData, error: guestError } = await supabase
+          .from("guests_info")
+          .select("guest_firstname, guest_lastname")
+          .eq("res_id", res_id)
+          .eq("isReservor", true)
+          .single();
+
+        if (guestError) {
+          console.error("Error fetching guest data:", guestError);
+          continue;
+        }
+
+        const guestFullName = guestData
+          ? `${guestData.guest_firstname || ""} ${guestData.guest_lastname || ""}`.trim()
+          : "Unknown";
+
+        // Add to formatted bookings
+        formattedBookings.push({
+          id: res_id,
+          rooms,
+          guest: guestFullName,
+          checkIn: reservationData.check_in_date,
+          checkOut: reservationData.check_out_date,
+          status: reservationData.res_status,
+        });
       }
+
+      setBookings(formattedBookings);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  // const handleRowClick = (id: string) => {
+  //   navigate(`/employee/edit-booking/${id}`);
+  // };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFilters({
+      ...filters,
+      [e.target.name]: e.target.value,
     });
   };
 
+  const applyFilters = (booking: Booking) => {
+    if (filters.date && !(booking.checkIn.includes(filters.date) || booking.checkOut.includes(filters.date))) {
+      return false;
+    }
+    if (filters.guestName && !booking.guest.toLowerCase().includes(filters.guestName.toLowerCase())) {
+      return false;
+    }
+    if (filters.resStatus && booking.status !== filters.resStatus) {
+      return false;
+    }
+    return true;
+  };
+
   return (
-    <div className="container mx-auto p-8 bg-white shadow-md rounded-md">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold">Add New Booking</h1>
-        <div className="flex space-x-4">
-          <button className="btn-secondary">Reset</button>
-          <button className="btn-secondary">Close</button>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      {/* Header Section */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-semibold">Bookings</h1>
+        <div className="flex items-center gap-4">
+          <button className="px-4 py-2 text-sm bg-green-100 text-green-700 rounded">Daily</button>
+          <button className="px-4 py-2 text-sm bg-gray-200 text-gray-600 rounded">Monthly</button>
+          <button
+            className="px-4 py-2 text-sm bg-red-800 text-white rounded"
+            onClick={() => navigate("/employee/create-booking")}
+          >
+            + Create new booking
+          </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left Content */}
-        <div className="col-span-2 space-y-6">
-          {/* Room Details */}
-          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Room Details</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <input type="date" className="input" placeholder="Check In" />
-              <input type="number" className="input" placeholder="Duration (Nights)" />
-              <input type="date" className="input" placeholder="Check Out" />
-              <select className="input">
-                <option value="deluxe">Deluxe King</option>
-                <option value="standard">Deluxe King Mayon View</option>
-                <option value="standard">Deluxe Twin</option>
-                <option value="standard">Deluxe Twin Mayon View</option>
-                <option value="standard">Family Suite</option>
-                <option value="standard">Marison Suite</option>
-                <option value="standard">Premiere Suite</option>
-                <option value="standard">Premiere Suite Queen</option>
-                <option value="standard">Specialty Deluxe</option>
-              </select>
-              <select className="input">
-                <option value="extra">Extra Bed</option>
-              </select>
-              <input type="text" className="input" placeholder="Room #" />
-            </div>
-          </div>
-
-          {/* Guest Details */}
-          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Guest Details</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <input type="text" className="input" placeholder="Full Name" />
-              <input type="email" className="input" placeholder="Email" />
-              <input type="tel" className="input" placeholder="Phone Number" />
-              <input type="text" className="input" placeholder="Address" />
-              <input type="text" className="input" placeholder="Country" />
-              <textarea className="input col-span-2" placeholder="Guest Comment/Request"></textarea>
-            </div>
-          </div>
-
-          {/* Extras */}
-          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Extras</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {['Breakfast', 'Lunch', 'Dinner', 'Spa', 'Laundry', 'Bike Rent', 'Car Rent', 'Local Guide'].map((extra) => (
-                <label key={extra} className="flex items-center space-x-2">
-                  <input type="checkbox" />
-                  <span>{extra}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment Method */}
-          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <select className="input">
-                <option value="debit">Visa Card</option>
-                <option value="credit">PayPal</option>
-              </select>
-              <input type="text" className="input" placeholder="Bank" />
-              <input type="text" className="input" placeholder="Card Number" />
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="col-span-1 bg-gray-50 p-4 rounded-md shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Booking Summary</h2>
-          <div className="space-y-2">
-            <p>Room Total: <span className="float-right">PHP</span></p>
-            <p>Extras: <span className="float-right">PHP</span></p>
-            <p>Discount: <span className="float-right">- PHP</span></p>
-            <p className="font-semibold">Total: <span className="float-right text-red-500">PHP</span></p>
-          </div>
-          <div className="mt-4">
-            <input type="text" className="input mb-2 bg-slate-200 w-full py-1.5 px-2" placeholder="Coupon Code" />
-            <button className=" py-2 btn-primary w-1/2 mt-2 bg-black text-white rounded-sm">Apply</button>
-          </div>
-          <button className="py-2 btn-primary w-full mt-6 bg-red-800 text-white rounded-sm">Book Room</button>
-        </div>
+      {/* Filters */}
+      <div className="flex items-center gap-4 bg-white p-4 rounded shadow mb-6">
+        <input
+          type="date"
+          className="border p-2 rounded text-gray-600 text-sm"
+          name="date"
+          value={filters.date}
+          onChange={handleFilterChange}
+        />
+        <input
+          type="text"
+          placeholder="Guest Name"
+          className="border p-2 rounded text-sm text-gray-600"
+          name="guestName"
+          value={filters.guestName}
+          onChange={handleFilterChange}
+        />
+        <select
+          className="border p-2 rounded text-sm text-gray-600"
+          name="resStatus"
+          value={filters.resStatus}
+          onChange={handleFilterChange}
+        >
+          <option value="">Status</option>
+          <option>pending</option>
+          <option>confirmed</option>
+        </select>
       </div>
+
+      {/* Booking Table */}
+      <table className="w-full bg-white rounded shadow overflow-hidden">
+        <thead className="bg-gray-200">
+          <tr className="text-left text-sm text-gray-600">
+            <th className="p-4">Book ID</th>
+            <th className="p-4">Rooms</th>
+            <th className="p-4">Guest</th>
+            <th className="p-4">Check In</th>
+            <th className="p-4">Check Out</th>
+            <th className="p-4">Res. Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bookings.filter(applyFilters).map((booking) => (
+            <tr
+              key={booking.id}
+              className="hover:bg-gray-50 border-b last:border-none text-sm text-gray-700 cursor-pointer"
+              onClick={() => handleRowClick(booking.id)}
+            >
+              <td className="p-4">{booking.id}</td>
+              <td className="p-4">{booking.rooms.join(", ")}</td>
+              <td className="p-4">{booking.guest}</td>
+              <td className="p-4">{booking.checkIn}</td>
+              <td className="p-4">{booking.checkOut}</td>
+              <td className="p-4">{booking.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-export default AddNewBooking;
+export default BookingTable;
