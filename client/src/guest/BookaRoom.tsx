@@ -41,7 +41,7 @@ const BookaRoom: React.FC = () => {
             setCheckInDate(checkInDate);
             setCheckOutDate(checkOutDate);
         }
-    }, [location.state]);
+    }, [location.state]);       
 
     // get room type details
     useEffect(() => {

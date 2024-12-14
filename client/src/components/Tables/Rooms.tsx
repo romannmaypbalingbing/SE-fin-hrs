@@ -54,13 +54,13 @@ const Rooms = () => {
     }
   };
 
-  const calculateStayDuration = (checkoutDate: string) => {
-    const today = new Date();
-    const checkout = new Date(checkoutDate);
-    const diffTime = checkout.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 0 ? 'Checks out today' : `${diffDays} days left`;
-  };
+  // const calculateStayDuration = (checkoutDate: string) => {
+  //   const today = new Date();
+  //   const checkout = new Date(checkoutDate);
+  //   const diffTime = checkout.getTime() - today.getTime();
+  //   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  //   return diffDays <= 0 ? 'Checks out today' : `${diffDays} days left`;
+  // };
 
   const handleViewDetails = (roomId: number) => {
     console.log(`View details for room ${roomId}`);
@@ -117,7 +117,7 @@ const Rooms = () => {
             <option value="">All Room Status</option>
             <option value="available">Available</option>
             <option value="reserved">Reserved</option>
-            <option value="occupied">Occupied</option>
+            {/* <option value="occupied">Occupied</option> */}
           </select>
         </div>
       </div>
@@ -156,7 +156,7 @@ const Rooms = () => {
 
                     <div className="col-span-2 flex items-center">
                       <button onClick={() => handleViewDetails(room.room_id)}
-                              className="px-4 py-2 text-sm text-slate-700 italic hover:text-red-800">
+                              className="px-4 py-2 text-sm text-slate-700 italic dark:text-slate-500 hover:text-red-800">
                         view details
                       </button>
                     </div>

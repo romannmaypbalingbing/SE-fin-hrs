@@ -1,174 +1,194 @@
-// src/pages/Guests.tsx
-
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import supabase from '../../supabaseClient'; // Adjust the path to your Supabase client setup
+import { useNavigate } from 'react-router-dom';
+import supabase from "../../supabaseClient"
 
-const GuestsInfoTable = () => {
+const GuestInfoForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  interface Guest {
-    id: string;
-    formData: {
-      lastName: string;
-      firstName: string;
-      email: string;
-      contactNumber: string;
-      address: string;
-      country: string;
-      notesandRequests?: string;
-    };
-    shuttleService: boolean;
-    arrivalDate: string | null;
-    arrivalTime: string | null;
-  }
+  const [guest, setGuest] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    contactNumber: '',
+    address: '',
+    country: '',
+    notesAndRequests: '',
+    shuttleService: false,
+    arrivalDate: '',
+    arrivalTime: '',
+  });
 
-  interface Payment {
-    cardName: string;
-    cardNumber: string;
-    expDateMonth: string;
-    expDateYear: string;
-    securityCode: string;
-  }
+  const [payment, setPayment] = useState({
+    cardName: '',
+    cardNumber: '',
+    expDateMonth: '',
+    expDateYear: '',
+    securityCode: '',
+  });
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
 
-  const handleShuttleServiceChange = (guestID: string) => {
-    setGuests((prevGuests) =>
-      prevGuests.map((guest) =>
-        guest.id === guestID
-          ? { ...guest, shuttleService: !guest.shuttleService }
-          : guest
-      )
-    );
+  const countryList = ["USA", "Canada", "Philippines", "Australia", "Japan"];
+
+  const insertGuest = async () => {
+    const { error } = await supabase.from('guests_info').insert([
+      {
+        guest_firstname: guest.firstName,
+        guest_lastname: guest.lastName,
+        guest_email: guest.email,
+        guest_contactno: guest.contactNumber,
+        guest_address: guest.address,
+        guest_country: guest.country,
+        guest_requests: guest.notesAndRequests || '',
+        res_id: res_id,
+        isReservor: 1,
+      },
+    ]);
+
+    return !error;
   };
 
-  
-  return (
-    <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-      <h3 className="text-xl font-semibold text-black dark:text-white py-3 px-3">
-        Guest Information
-      </h3>
+  const insertPayment = async () => {
+    const { error } = await supabase.from('payment').insert([
+      {
+        res_id: res_id,
+        card_name: payment.cardName,
+        card_number: payment.cardNumber,
+        exp_date_month: payment.expDateMonth,
+        exp_date_year: payment.expDateYear,
+        sec_Code: payment.securityCode,
+        payment_method: paymentMethod,
+      },
+    ]);
 
-      <table className="min-w-full table-auto border-collapse">
-        <thead>
-          <tr className="bg-gray-200 dark:bg-gray-700 text-left text-sm">
-            <th className="py-2 px-3 border-b">Last Name</th>
-            <th className="py-2 px-3 border-b">First Name</th>
-            <th className="py-2 px-3 border-b">Email</th>
-            <th className="py-2 px-3 border-b">Contact No</th>
-            <th className="py-2 px-3 border-b">Address</th>
-            <th className="py-2 px-3 border-b">Shuttle Service</th>
-            <th className="py-2 px-3 border-b">Arrival Date</th>
-            <th className="py-2 px-3 border-b">Arrival Time</th>
-            <th className="py-2 px-3 border-b">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-            <tr className="border-b text-sm">
-              <td className="py-2 px-3">
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => handleGuestChange(e, guest.id)}
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="text"
-                  name="firstName"
-                  value={guest.formData.firstName}
-                  onChange={(e) => handleGuestChange(e, guest.id)}
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="email"
-                  name="email"
-                  value={guest.formData.email}
-                  onChange={(e) => handleGuestChange(e, guest.id)}
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="text"
-                  name="contactNumber"
-                  value={guest.formData.contactNumber}
-                  onChange={(e) => handleGuestChange(e, guest.id)}
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="text"
-                  name="address"
-                  value={guest.formData.address}
-                  onChange={(e) => handleGuestChange(e, guest.id)}
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="checkbox"
-                  checked={guest.shuttleService}
-                  onChange={() => handleShuttleServiceChange(guest.id)}
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="date"
-                  value={guest.arrivalDate || ''}
-                  onChange={(e) =>
-                    setGuests((prevGuests) =>
-                      prevGuests.map((g) =>
-                        g.id === guest.id
-                          ? { ...g, arrivalDate: e.target.value }
-                          : g
-                      )
-                    )
-                  }
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <input
-                  type="time"
-                  value={guest.arrivalTime || ''}
-                  onChange={(e) =>
-                    setGuests((prevGuests) =>
-                      prevGuests.map((g) =>
-                        g.id === guest.id
-                          ? { ...g, arrivalTime: e.target.value }
-                          : g
-                      )
-                    )
-                  }
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </td>
-              <td className="py-2 px-3">
-                <button
-                  onClick={() => removeGuest(guest.id)}
-                  className="text-red-500 text-xs hover:underline"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button
-        onClick={addGuest}
-        className="mt-3 bg-blue-500 text-white px-3 py-2 rounded shadow hover:bg-blue-600"
-      >
-        Add Guest
-      </button>
+    return !error;
+  };
+
+  const insertShuttleService = async () => {
+    if (guest.shuttleService) {
+      const { error } = await supabase.from('reservation').insert([
+        {
+          shuttle_service: guest.shuttleService,
+          shuttle_date: guest.arrivalDate,
+          shuttle_time: guest.arrivalTime,
+        },
+      ]);
+      return !error;
+    }
+
+    return true;
+  };
+
+  const submitGuestInfo = async () => {
+    try {
+      const success =
+        (await insertGuest()) &&
+        (await insertPayment()) &&
+        (await insertShuttleService());
+
+      if (success) {
+        navigate('/guest/receipt');
+      } else {
+        alert('An error occurred while submitting the information.');
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('An unexpected error occurred. Please try again.');
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-8 bg-white shadow-md rounded-md">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-semibold">Add New Booking</h1>
+        <div className="flex space-x-4">
+          <button className="btn-secondary">Reset</button>
+          <button className="btn-secondary">Close</button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Left Content */}
+        <div className="col-span-2 space-y-6">
+          {/* Room Details */}
+          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Room Details</h2>
+            <div className="grid grid-cols-3 gap-4">
+              <input type="date" className="input" placeholder="Check In" />
+              <input type="number" className="input" placeholder="Duration (Nights)" />
+              <input type="date" className="input" placeholder="Check Out" />
+              <select className="input" placeholder="Room Type">
+                <option value="deluxe">Deluxe Suites</option>
+                <option value="standard">Standard Room</option>
+              </select>
+              <select className="input" placeholder="Room Plan">
+                <option value="extra">Extra Bed</option>
+              </select>
+              <input type="text" className="input" placeholder="Room #" />
+            </div>
+          </div>
+
+          {/* Guest Details */}
+          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Guest Details</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <input type="text" className="input" placeholder="Full Name" />
+              <input type="email" className="input" placeholder="Email" />
+              <input type="tel" className="input" placeholder="Phone Number" />
+              <input type="text" className="input" placeholder="Address" />
+              <input type="text" className="input" placeholder="Country" />
+              <textarea className="input col-span-2" placeholder="Guest Comment/Request"></textarea>
+            </div>
+          </div>
+
+          {/* Extras */}
+          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Extras</h2>
+            <div className="grid grid-cols-3 gap-4">
+              {['Breakfast', 'Lunch', 'Dinner', 'Spa', 'Laundry', 'Bike Rent', 'Car Rent', 'Local Guide'].map((extra) => (
+                <label key={extra} className="flex items-center space-x-2">
+                  <input type="checkbox" />
+                  <span>{extra}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment Method */}
+          <div className="bg-gray-50 p-4 rounded-md shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+            <div className="grid grid-cols-3 gap-4">
+              <select className="input">
+                <option value="debit">Debit Card</option>
+                <option value="credit">Credit Card</option>
+              </select>
+              <input type="text" className="input" placeholder="Bank" />
+              <input type="text" className="input" placeholder="Card Number" />
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="col-span-1 bg-gray-50 p-4 rounded-md shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Booking Summary</h2>
+          <div className="space-y-2">
+            <p>Room Total: <span className="float-right">$</span></p>
+            <p>Extras: <span className="float-right">$</span></p>
+            <p>Discount: <span className="float-right">- $</span></p>
+            <p className="font-semibold">Total: <span className="float-right text-red-500">$</span></p>
+          </div>
+          <div className="mt-4">
+            <input type="text" className="input" placeholder="Coupon Code" />
+            <button className="btn-primary w-full mt-2">Apply</button>
+          </div>
+          <button className="btn-primary w-full mt-6">Book Room</button>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default GuestsInfoTable;
+
+
+export default GuestInfoForm;
